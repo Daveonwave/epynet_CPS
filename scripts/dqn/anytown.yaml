@@ -1,0 +1,121 @@
+env:
+    town: 'anytown_map'
+    state_vars:
+        'day': 1
+        'time': 0
+        'tanks':
+            - 'T41'
+            - 'T42'
+        'junctions':
+            - 'J20'
+        'demand_SMA': 0
+        'under_attack': 0
+    action_vars:
+        - 'P78'
+        - 'P79'
+    #duration: 86400    # 1 day
+    duration: 604800    # 1 week
+    #duration: 6048    # for trials
+    hyd_step: 600
+    pattern_step: 3600
+    # pattern_file: null
+    patterns:
+        train: '../../demand_patterns/demand_patterns_train_combined.csv'
+        train_full_range: '../../demand_patterns/demand_patterns_train_full_range.csv'
+        train_low: '../../demand_patterns/demand_patterns_train_low.csv'
+        test: '../../demand_patterns/demand_patterns_test_mixed.csv'
+    seed: null
+    # update_every: 14400     # 4hours
+    update_every: null
+    bounds:
+        day:
+            min: 1
+            max: 7
+        time:
+            min: 0
+            max: 86400
+        41_level:
+            min: 3.048  #3.429 (5%)
+            max: 10.668 #10,287 (95%)
+        42_level:
+            min: 3.048
+            max: 10.668
+        20_pressure:
+            min: 0
+            max: 100
+        demand_SMA:
+            min: 0
+            max: 1
+        under_attack:
+            min: 0
+            max: 1
+
+agent:
+    load: False
+    load_as: 'saved_models/overflow.msh'
+    batch_size: 32
+    target_update_frequency: 50
+    initial_replay_memory: 500
+    max_replay_size: 40000
+
+nn:
+    hidden_size: 5
+
+optimizer:
+    lr: .00025
+
+learning:
+    epochs: 10
+    train_episodes: 5
+    train_frequency: 4
+
+attacks_train:
+    interval: 64800
+    threshold_attack_presence: 0.5
+    max_n_attacks: 4
+
+#attacks_test: !include attacks_test.yaml
+attacks_test:
+  - name: attack1
+    type: mitm
+    trigger:
+      type: time
+      start: 122400 #204
+      end: 187200 #312
+    tags:
+      - tag: T41
+        value: 0.1
+    target: PLC2
+
+  - name: attack2
+    type: mitm
+    trigger:
+      type: time
+      start: 324000 #540
+      end: 388800 #648
+    tags:
+      - tag: T42
+        value: 10
+    target: PLC3
+
+  - name: attack3
+    type: mitm
+    trigger:
+      type: time
+      start: 439200 #732
+      end: 504000 #840
+    tags:
+       - tag: T41
+         value: 0.1
+    target: PLC2
+
+  - name: attack4
+    type: mitm
+    trigger:
+      type: time
+      start: 439200 #732
+      end: 504000 #840
+    tags:
+       - tag: T42
+         value: 0.1
+    target: PLC3
