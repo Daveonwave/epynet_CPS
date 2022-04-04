@@ -1,17 +1,14 @@
 if __name__ == '__main__':
-    from scripts import network, epynetUtils, objFunction, differentialEvolution
+    from main.agent import objFunction
+    from main.physical_process import WaterDistributionNetwork
     import pandas as pd
     import datetime
 
-    net = network.WaterDistributionNetwork("anytown_pd.inp")
-    print(net.junctions['20'].pattern.values)
+    net = WaterDistributionNetwork("anytown_map.inp")
+    print(net.junctions['J20'].pattern.values)
 
     # Put report step equal to hyd_step because if it is lower it leads the timestep interval
-    net.set_time_params(duration=3600*24*7, hydraulic_step=300, report_step=1200)
-
-    pattern_csv = "../demand_patterns/demand_patterns_test_low.csv"
-    junc_demands = pd.read_csv(pattern_csv)
-    net.set_demand_pattern('junc_demand', junc_demands['0'], net.junctions)
+    net.set_time_params(duration=3600*5, hydraulic_step=300, report_step=1200)
 
     status = [1.0, 1.0]
     if net.valves:
@@ -22,9 +19,8 @@ if __name__ == '__main__':
     net.run(interactive=True, status_dict=actuators_update_dict)
     # print(net.junctions.actual_demand.iloc[-1])
 
-    print(net.tanks.overflow)
-    print(net.df_nodes_report['tanks'])
-    print(net.df_links_report['pumps'])
+    print(net.nodes['T41'].get_property(net.nodes['T41'].properties['pressure']))
+    print(net.nodes['T41'].times)
 
     exit(0)
 

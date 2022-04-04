@@ -153,7 +153,7 @@ class EPANET2(object):
                       EN_HEAD       * Hydraulic head
                       EN_PRESSURE   * Pressure
                       EN_QUALITY    * Actual quality
-                      EN_SOURCEMASS * Mass flow rate per minute of a chemical source
+                      EN_SOURCEMASS * Mass flow rate per minute of a chemical main
                         * computed values)
                        ** primary demand category is last on demand list
 
@@ -341,7 +341,7 @@ class EPANET2(object):
                            EN_CHEM	1 Chemical analysis
                            EN_AGE 	2 Water age analysis
                            EN_TRACE	3 Source tracing
-                 tracenode:	index of node traced in a source tracing
+                 tracenode:	index of node traced in a main tracing
                             analysis  (value will be 0 when qualcode
                             is not EN_TRACE)"""
         qualcode= ctypes.c_int()
@@ -587,7 +587,7 @@ class EPANET2(object):
              qualcode:	water quality analysis code
              chemname:	name of the chemical being analyzed
              chemunits:	units that the chemical is measured in
-             tracenode:	ID of node traced in a source tracing analysis """
+             tracenode:	ID of node traced in a main tracing analysis """
         ierr= self._lib.EN_setqualtype(self.ph,  ctypes.c_int(qualcode),
                                   ctypes.c_char_p(chemname.encode(self.charset)),
                                   ctypes.c_char_p(chemunits.encode(self.charset)),

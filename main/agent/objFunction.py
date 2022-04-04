@@ -1,8 +1,8 @@
-from . import network
+from main.physical_process import WaterDistributionNetwork
 import datetime
 
 
-def flow_demand_ratio(wds: network.WaterDistributionNetwork, driven_links):
+def flow_demand_ratio(wds: WaterDistributionNetwork, driven_links):
     """
     Computes the ratio between the total delivered and total requested water
     :param wds: network we are working on
@@ -20,7 +20,7 @@ def flow_demand_ratio(wds: network.WaterDistributionNetwork, driven_links):
     return ratio
 
 
-def step_flow_demand_ratio(wds: network.WaterDistributionNetwork, driven_links):
+def step_flow_demand_ratio(wds: WaterDistributionNetwork, driven_links):
     """
     Computes the ratio between the delivered and requested water at each step and average it, without considering the
     first two iterations which only stabilize the network
@@ -49,7 +49,7 @@ def step_flow_demand_ratio(wds: network.WaterDistributionNetwork, driven_links):
     return sum(ratios[2:]) / (len(ratios) - 2)
 
 
-def average_demand_deficit(wds: network.WaterDistributionNetwork, target_junctions=None):
+def average_demand_deficit(wds: WaterDistributionNetwork, target_junctions=None):
     """
     Minimize the average demand deficit at each step, so I get an averaged value of how big is the demand deficit at
     each iteration
@@ -69,7 +69,7 @@ def average_demand_deficit(wds: network.WaterDistributionNetwork, target_junctio
     return result
 
 
-def supply_demand_ratio(wds: network.WaterDistributionNetwork, target_junctions=None):
+def supply_demand_ratio(wds: WaterDistributionNetwork, target_junctions=None):
     """
     Computes the actual demand / basedemand ratio at each timestep and then it averages among all the ratios collected
     so far.
@@ -98,7 +98,7 @@ def supply_demand_ratio(wds: network.WaterDistributionNetwork, target_junctions=
     return sum(ratios) / len(ratios)
 
 
-def step_supply_demand_ratio(wds: network.WaterDistributionNetwork, target_junctions=None):
+def step_supply_demand_ratio(wds: WaterDistributionNetwork, target_junctions=None):
     """
 
     :param wds:
@@ -122,7 +122,7 @@ def step_supply_demand_ratio(wds: network.WaterDistributionNetwork, target_junct
     #return sum(ratios) / len(ratios)
 
 
-def pressure_violations(wds: network.WaterDistributionNetwork, target_nodes, nodes_band):
+def pressure_violations(wds: WaterDistributionNetwork, target_nodes, nodes_band):
     """
     Computes how many pressure violations there have been at the end of the simulation
     :param wds: network we are working on
@@ -143,7 +143,7 @@ def pressure_violations(wds: network.WaterDistributionNetwork, target_nodes, nod
     return -n_violations
 
 
-def energy_consumption(wds: network.WaterDistributionNetwork):
+def energy_consumption(wds: WaterDistributionNetwork):
     """
     Computes the total energy consumption at the end of the simulation
     :param wds: network object
@@ -156,7 +156,7 @@ def energy_consumption(wds: network.WaterDistributionNetwork):
     return total_energy
 
 
-def tanks_feed_ratio(wds: network.WaterDistributionNetwork):
+def tanks_feed_ratio(wds: WaterDistributionNetwork):
     """
     Computes the ratio between (junctions_demand) / (junctions_demand + total_tanks_flow), where the total_tanks_flow
     is determined by the sum of the absolute value of inflow and outflow for every tank.

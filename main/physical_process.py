@@ -1,16 +1,16 @@
-import epynet
 import pandas as pd
 import datetime
 from tqdm import tqdm
 from time import sleep
-from scripts import epynetUtils
+from main import epynetUtils
+from main.epynet.network import Network
 
 # TODO: remove global variables
 actuators_update_dict = {}
 # step_count = 0
 
 
-class WaterDistributionNetwork(epynet.Network):
+class WaterDistributionNetwork(Network):
     """Class of the network inherited from Epynet.Network"""
     def __init__(self, inpfile: str):
         super().__init__(inputfile=inpfile)

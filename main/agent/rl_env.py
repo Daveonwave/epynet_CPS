@@ -4,8 +4,8 @@ import random
 import yaml
 from mushroom_rl.core.environment import Environment, MDPInfo
 from mushroom_rl.utils.spaces import Discrete, Box
-from scripts import network, objFunction
-from scripts.dqn.logger import Plotter
+from main.agent import objFunction
+from main.agent.logger import Plotter
 
 
 class WaterNetworkEnvironment(Environment):
@@ -69,7 +69,7 @@ class WaterNetworkEnvironment(Environment):
         self.total_updates = 0
         self.dsr = 0
 
-        # FOR ATTACKS
+        # FOR ATTACKS -> memorized by PLCs
         self.attacks = None
         self.t41_ground = None
         self.t42_ground = None
@@ -156,7 +156,7 @@ class WaterNetworkEnvironment(Environment):
                 print("col: ", col)
                 self.wn.set_demand_pattern('junc_demand', junc_demands[col], self.wn.junctions)
 
-            # Test attacks
+            # Test network_attacks
             self.attacks = self.hparams['attacks_test']
 
         else:
@@ -167,8 +167,8 @@ class WaterNetworkEnvironment(Environment):
                 print("col: ", col)
                 self.wn.set_demand_pattern('junc_demand', junc_demands[col], self.wn.junctions)
 
-            # Train attacks
-            #self.attacks = self.generate_random_attacks_in_train()
+            # Train network_attacks
+            #self.network_attacks = self.generate_random_attacks_in_train()
             self.attacks = []
 
         print(self.attacks)
