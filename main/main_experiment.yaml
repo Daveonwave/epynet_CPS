@@ -1,0 +1,5 @@
+agent_config: 'dqn_anytown.yaml'
+meta-learning: false
+experiments:
+    - env: 'env_config.yaml'
+      attacks: 'attacks_config.yaml'

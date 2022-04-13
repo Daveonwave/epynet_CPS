@@ -34,7 +34,7 @@ class WaterNetworkEnvironment(Environment):
         :param pattern_step:
         :param pattern_files:
         """
-        with open("anytown.yaml", 'r') as fin:
+        with open("dqn_anytown.yaml", 'r') as fin:
             self.hparams = yaml.safe_load(fin)
 
         self.town = town

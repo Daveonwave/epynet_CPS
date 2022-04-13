@@ -11,7 +11,7 @@ from main.network_ics.generic_plc import SensorPLC, ActuatorPLC
 
 class WaterNetworkEnvironment(Environment):
 
-    def __init__(self, config_file):
+    def __init__(self, env_config_file):
         """
         :param town:
         :param state_vars:
@@ -21,7 +21,7 @@ class WaterNetworkEnvironment(Environment):
         :param pattern_step:
         :param pattern_files:
         """
-        with open(config_file, 'r') as fin:
+        with open(env_config_file, 'r') as fin:
             env_config = yaml.safe_load(fin)
 
         self.town = env_config['town']

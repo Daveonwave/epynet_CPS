@@ -12,37 +12,19 @@ from torch.optim.adam import Adam
 from torch.nn import functional as F
 
 from main.agent import nn
-from main.agent.rl_env import WaterNetworkEnvironment
+from main.agent.rl_env_new import WaterNetworkEnvironment
 from main.agent.logger import InfoLogger
-
-results_path = '../../results/DQN'
-config_file = 'anytown.yaml'
-
-logger = InfoLogger(config_file[:-5], results_path)
 
 
 class DQNAgent:
     """
 
     """
-    def __init__(self):
-        with open(config_file, 'r') as fin:
+    def __init__(self, input_file):
+        with open(input_file, 'r') as fin:
             self.hparams = yaml.safe_load(fin)
 
-        self.env = WaterNetworkEnvironment(
-            town=self.hparams['env']['town'],
-            state_vars=self.hparams['env']['state_vars'],
-            action_vars=self.hparams['env']['action_vars'],
-            duration=self.hparams['env']['duration'],
-            hyd_step=self.hparams['env']['hyd_step'],
-            pattern_step=self.hparams['env']['pattern_step'],
-            pattern_files=self.hparams['env']['patterns'],
-            seed=self.hparams['env']['seed'],
-            update_every=self.hparams['env']['update_every'],
-            bounds=self.hparams['env']['bounds'],
-            logger=logger,
-            show_plot=None
-        )
+        self.env = WaterNetworkEnvironment()
 
         # Creating the epsilon greedy policy
         self.epsilon_train = LinearParameter(value=1., threshold_value=.01, n=300000)
