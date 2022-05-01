@@ -1,4 +1,4 @@
-from main import epynet as en
+import epynet as en
 
 time_params = {
     '0': 'EN_DURATION',

@@ -83,7 +83,7 @@ class Reservoir(Node):
 class Junction(Node):
     """ EPANET Junction Class """
     static_properties = {'elevation': epanet2.EN_ELEVATION, 'basedemand': epanet2.EN_BASEDEMAND, 'emitter': epanet2.EN_EMITTER}
-    properties = {'head': epanet2.EN_HEAD, 'pressure': epanet2.EN_PRESSURE, 'actual_demand': epanet2.EN_DEMAND,
+    properties = {'head': epanet2.EN_HEAD, 'pressure': epanet2.EN_PRESSURE, 'demand': epanet2.EN_DEMAND,
                   'demand_deficit': epanet2.EN_DEMANDDEFICIT}
     node_type = "Junction"
 

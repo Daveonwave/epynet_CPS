@@ -4,8 +4,8 @@ import random
 import yaml
 from mushroom_rl.core.environment import Environment, MDPInfo
 from mushroom_rl.utils.spaces import Discrete, Box
-from main.agent import objFunction
-from main.agent.logger import Plotter
+from epynet_cps.main.agent import objFunction
+from epynet_cps.main.agent import Plotter
 
 
 class WaterNetworkEnvironment(Environment):
@@ -331,8 +331,8 @@ class WaterNetworkEnvironment(Environment):
                 multiplier = out_bound / (tank.maxlevel - tank.maxlevel * risk_percentage)
                 return penalty * multiplier
         return 0
-        #     if len(tank.results['pressure']) > 5:
-        #         last_levels = tank.results['pressure'][-5:-1]
+        #     if len(tank.experiments['pressure']) > 5:
+        #         last_levels = tank.experiments['pressure'][-5:-1]
         #         is_overflow = True
         #
         #         for level in last_levels:

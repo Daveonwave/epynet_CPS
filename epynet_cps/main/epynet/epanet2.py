@@ -633,7 +633,7 @@ class EPANET2(object):
         if ierr!=0: raise ENtoolkitError(self, ierr)
 
 
-    #----- Saving and using hydraulic analysis results files -------
+    #----- Saving and using hydraulic analysis experiments files -------
     def ENsavehydfile(self, fname):
         """Saves the current contents of the binary hydraulics file to a file."""
         ierr= self._lib.EN_savehydfile(self.ph, ctypes.c_char_p(fname.encode()))
@@ -648,7 +648,7 @@ class EPANET2(object):
 
     #----------Running a hydraulic analysis --------------------------
     def ENsolveH(self):
-        """Runs a complete hydraulic simulation with results 
+        """Runs a complete hydraulic simulation with experiments
         for all time periods written to the binary Hydraulics file."""
         ierr= self._lib.EN_solveH(self.ph, )
         if ierr!=0: raise ENtoolkitError(self, ierr)
@@ -704,7 +704,7 @@ class EPANET2(object):
 
     #----------Running a quality analysis --------------------------
     def ENsolveQ(self):
-        """Runs a complete water quality simulation with results 
+        """Runs a complete water quality simulation with experiments
         at uniform reporting intervals written to EPANET's binary Output file."""
         ierr= self._lib.EN_solveQ(self.ph, )
         if ierr!=0: raise ENtoolkitError(self, ierr)
@@ -724,7 +724,7 @@ class EPANET2(object):
         if ierr!=0: raise ENtoolkitError(self, ierr)
 
     def ENrunQ(self):
-        """Makes available the hydraulic and water quality results
+        """Makes available the hydraulic and water quality experiments
         that occur at the start of the next time period of a water quality analysis, 
         where the start of the period is returned in t."""
         ierr= self._lib.EN_runQ(self.ph, ctypes.byref(self._current_simulation_time))
@@ -762,9 +762,9 @@ class EPANET2(object):
 
 
     def ENsaveH(self):
-        """Transfers results of a hydraulic simulation 
+        """Transfers experiments of a hydraulic simulation
         from the binary Hydraulics file to the binary
-        Output file, where results are only reported at 
+        Output file, where experiments are only reported at
         uniform reporting intervals."""
         ierr= self._lib.EN_saveH(self.ph, )
         if ierr!=0: raise ENtoolkitError(self, ierr)
@@ -778,7 +778,7 @@ class EPANET2(object):
 
 
     def ENreport(self):
-        """Writes a formatted text report on simulation results 
+        """Writes a formatted text report on simulation experiments
         to the Report file."""
         ierr= self._lib.EN_report(self.ph, )
         if ierr!=0: raise ENtoolkitError(self, ierr)
@@ -1071,7 +1071,7 @@ EN_MIX2          = 1
 EN_FIFO          = 2
 EN_LIFO          = 3
 
-EN_NOSAVE        = 0      # /* Save-results-to-file flag */
+EN_NOSAVE        = 0      # /* Save-experiments-to-file flag */
 EN_SAVE          = 1
 EN_INITFLOW      = 10     # /* Re-initialize flow flag   */
 

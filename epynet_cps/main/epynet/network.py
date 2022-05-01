@@ -372,12 +372,12 @@ class Network(object):
                     node.results[property_name] = []
                 node.results[property_name].append(node.get_property(node.properties[property_name]))
 
-            # check if it's junction to add basedemand with pattern to results
+            # check if it's junction to add basedemand with pattern to experiments
             if node.node_type == 'Junction':
                 if 'basedemand' not in node.results.keys():
                     node.results['basedemand'] = []
                 # if pattern not set it takes the basedemand as it is
-                if node.basedemand > 0 and node.pattern.uid is not '1':
+                if node.basedemand > 0 and node.pattern.uid != '1':
                     pattern_step = self.ep.ENgettimeparam(3)
                     node.results['basedemand'].append(
                         node.basedemand * node.pattern.values[(simtime // pattern_step) % len(node.pattern.values)])

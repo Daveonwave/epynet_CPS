@@ -1,5 +1,7 @@
-agent_config: 'dqn_anytown.yaml'
+agent_class: DeepQNetwork
+agent_config: 'dqn_config_new.yaml'
 meta-learning: false
+experiment_folder: 'exp_0'
 experiments:
     - env: 'env_config.yaml'
       attacks: 'attacks_config.yaml'

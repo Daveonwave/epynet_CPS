@@ -1,19 +1,17 @@
 import pandas as pd
 import yaml
-import random
 from mushroom_rl.core import Core
 from mushroom_rl.algorithms.value import DQN
 from mushroom_rl.approximators.parametric import TorchApproximator
 from mushroom_rl.policy import EpsGreedy
 from mushroom_rl.utils.parameters import LinearParameter, Parameter
 from mushroom_rl.utils.replay_memory import ReplayMemory
-from mushroom_rl.utils.callbacks import CollectDataset, CollectMaxQ
+from mushroom_rl.utils.callbacks import CollectDataset
 from torch.optim.adam import Adam
 from torch.nn import functional as F
 
-from main.agent import nn
-from main.agent.rl_env_new import WaterNetworkEnvironment
-from main.agent.logger import InfoLogger
+from . import nn
+from .rl_env_new import WaterNetworkEnvironment
 
 
 class DQNAgent:
@@ -24,7 +22,7 @@ class DQNAgent:
         with open(input_file, 'r') as fin:
             self.hparams = yaml.safe_load(fin)
 
-        self.env = WaterNetworkEnvironment()
+        self.env = WaterNetworkEnvironment(self.hparams['town'] + ".inp")
 
         # Creating the epsilon greedy policy
         self.epsilon_train = LinearParameter(value=1., threshold_value=.01, n=300000)
@@ -100,7 +98,7 @@ class DQNAgent:
         :return:
         """
         self.env.on_eval = False
-        self.pi.set_epsilon(dqn.epsilon_train)
+        self.pi.set_epsilon(self.epsilon_train)
         logger.training_phase()
         self.core.learn(n_episodes=self.hparams['learning']['train_episodes'],
                         n_steps_per_fit=self.hparams['learning']['train_frequency'],
@@ -162,7 +160,7 @@ if __name__ == '__main__':
             logger.print_epoch(epoch)
             dqn.learn()
             #_, qs = agent.evaluate(get_data=False, collect_qs=False)
-            #results['train'].append(qs)
+            #experiments['train'].append(qs)
 
         #agent.agent.save('saved_models/overflow_double_train_set.msh', full_save=True)
 
@@ -179,7 +177,7 @@ if __name__ == '__main__':
 
     import pickle
 
-    with open('../../results/DQN/anytown/uninformed_agent_attacks', 'wb') as fp:
+    with open('../../experiments/DQN/anytown/uninformed_agent_attacks', 'wb') as fp:
         pickle.dump(results, fp)
 
     #agent.env.wn.create_df_reports()

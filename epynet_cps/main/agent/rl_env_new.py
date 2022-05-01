@@ -2,35 +2,39 @@ import pandas as pd
 import numpy as np
 import random
 import yaml
+from pathlib import Path
 from mushroom_rl.core.environment import Environment, MDPInfo
 from mushroom_rl.utils.spaces import Discrete, Box
-from main.agent import objFunction
-from main.physical_process_new import WaterDistributionNetwork
-from main.network_ics.generic_plc import SensorPLC, ActuatorPLC
+from . import objFunction
+from network_ics.generic_plc import SensorPLC, ActuatorPLC
+from physical_process_new import WaterDistributionNetwork
+
+demand_pattern_folder = Path("../demand_patterns")
 
 
 class WaterNetworkEnvironment(Environment):
 
-    def __init__(self, env_config_file):
+    def __init__(self, env_config_file, attack_config_file=None, logger=None):
         """
-        :param town:
-        :param state_vars:
-        :param action_vars:
-        :param duration:
-        :param hyd_step:
-        :param pattern_step:
-        :param pattern_files:
+        :param env_config_file:
         """
+        print("INSIDE ENVIRONMENT")
+
         with open(env_config_file, 'r') as fin:
             env_config = yaml.safe_load(fin)
 
+        if attack_config_file:
+            with open(attack_config_file, 'r') as fin:
+                attacks_config = yaml.safe_load(fin)
+
         self.town = env_config['town']
-        self.state_vars = env_config['state_vars']
+        self.state_vars = env_config['state_vars'].keys()
         self.action_vars = env_config['action_vars']
 
         self.duration = env_config['duration']
         self.hyd_step = env_config['hyd_step']
         self.pattern_step = env_config['pattern_step']
+        self.update_every = env_config['update_every']
 
         # Demand patterns
         self.patterns_train = env_config['pattern_files']['train']
@@ -39,7 +43,8 @@ class WaterNetworkEnvironment(Environment):
         self.patterns_test_csv = env_config['pattern_files']['test']
 
         self.demand_moving_average = None
-        self.seed = env_config['seed']
+        self.test_seeds = env_config['test_seeds']
+        self.curr_seed = None
         self.on_eval = False
 
         self.wn = WaterDistributionNetwork(self.town + '.inp')
@@ -52,10 +57,13 @@ class WaterNetworkEnvironment(Environment):
         self.dsr = 0
 
         # Initialize ICS component
+        self.plcs_config = env_config['plcs']
         self.sensor_plcs = []
         self.actuator_plcs = []
-        self.plc_vars = {}
         self.build_ics_devices()
+
+        # TODO: logger, shouldn't be necessary, we have to make it optional
+        self.logger = logger
 
         # Two possible values for each pump: 2 ^ n_pumps
         action_space = Discrete(2 ** len(self.action_vars))
@@ -64,12 +72,11 @@ class WaterNetworkEnvironment(Environment):
         self._state = None
 
         # Bounds for observation space
-        # TODO: edit this
-        lows = np.array([bounds[key]['min'] for key in bounds.keys()])
-        highs = np.array([bounds[key]['max'] for key in bounds.keys()])
+        lows = np.array([env_config['state_vars'][key]['bounds']['min'] for key in self.state_vars])
+        highs = np.array([env_config['state_vars'][key]['bounds']['max'] for key in self.state_vars])
 
         # Observation space
-        observation_space = Box(low=lows, high=highs, shape=(len(bounds),))
+        observation_space = Box(low=lows, high=highs, shape=(len(self.state_vars),))
 
         # TODO: what is horizon?
         mdp_info = MDPInfo(observation_space, action_space, gamma=0.99, horizon=1000000)
@@ -85,35 +92,36 @@ class WaterNetworkEnvironment(Environment):
 
         if self.on_eval:
             if self.patterns_test_csv:
-                junc_demands = pd.read_csv(self.patterns_test_csv)
+                junc_demands = pd.read_csv(demand_pattern_folder / self.patterns_test_csv)
 
-                if self.seed is not None and self.seed < len(junc_demands.columns):
-                    col = junc_demands.columns.values[self.seed]
+                # Check if have been set a given seed for test, otherwise uses random columns
+                if self.curr_seed is not None and self.curr_seed < len(junc_demands.columns):
+                    col = junc_demands.columns.values[self.curr_seed]
                 else:
                     col = random.choice(junc_demands.columns.values)
                 print("col: ", col)
                 self.wn.set_demand_pattern('junc_demand', junc_demands[col], self.wn.junctions)
-
         else:
             if self.patterns_train:
                 # Set pattern file choosing randomly between full range or low demand pattern
-                junc_demands = pd.read_csv(self.patterns_train)
+                print(demand_pattern_folder / self.patterns_train)
+                junc_demands = pd.read_csv(demand_pattern_folder / self.patterns_train)
                 col = random.choice(junc_demands.columns.values)
                 print("col: ", col)
                 self.wn.set_demand_pattern('junc_demand', junc_demands[col], self.wn.junctions)
 
-        if 'demand_SMA' in self.state_vars.keys():
+        if 'demand_SMA' in self.state_vars:
             self.demand_moving_average = junc_demands[col].rolling(window=6, min_periods=1).mean()
             # self.demand_moving_average = junc_demands[col].ewm(alpha=0.1, adjust=False).mean()
 
         self.wn.init_simulation()
         self.curr_time = 0
         self.timestep = 1
-        self.seed = None
+        self.curr_seed = None
         self.wn.solved = False
         self.done = False
         self.total_updates = 0
-        self._state = self.build_current_state(reset=True)
+        self._state = self.build_current_state(readings=[], reset=True)
         return self._state
 
     def step(self, action):
@@ -135,9 +143,13 @@ class WaterNetworkEnvironment(Environment):
         # TODO: understand if we want to simulate also intermediate steps (not as DHALSIM)
         self.timestep = self.wn.simulate_step(self.curr_time)
         self.curr_time += self.timestep
+
+        # in case if we want to skip unwanted steps
+        """
         while self.curr_time % self.hyd_step != 0 and self.timestep != 0:
             self.timestep = self.wn.simulate_step(self.curr_time)
             self.curr_time += self.timestep
+        """
 
         readings = {}
         for sensor in self.sensor_plcs:
@@ -145,6 +157,7 @@ class WaterNetworkEnvironment(Environment):
 
         # Retrieve current state and reward from the chosen action
         self._state = self.build_current_state(readings=readings)
+        print(self._state)
         reward = self.compute_reward(n_updates)
 
         info = None
@@ -163,10 +176,18 @@ class WaterNetworkEnvironment(Environment):
 
     def build_ics_devices(self):
         """
-        Create instances of acturators and sensors
-        # TODO: implement
+        Create instances of actuators and sensors
         """
-        pass
+        self.sensor_plcs = [SensorPLC(name=sensor['name'],
+                                      wn=self.wn,
+                                      plc_variables=sensor['vars'],
+                                      attacks=None)
+                            for sensor in self.plcs_config if sensor['type'] == 'sensor']
+        self.actuator_plcs = [ActuatorPLC(name=sensor['name'],
+                                          wn=self.wn,
+                                          plc_variables=sensor['vars'],
+                                          attacks=None)
+                              for sensor in self.plcs_config if sensor['type'] == 'actuator']
 
     def build_current_state(self, readings, reset=False):
         """
@@ -177,16 +198,16 @@ class WaterNetworkEnvironment(Environment):
         """
         state = []
 
-        # TODO: understand how to initialize the reset state
+        # TODO: understand how to initialize through PLC acquisition of variables
         if reset:
-            for var in self.state_vars.keys():
+            for var in self.state_vars:
                 if var == 'time':
                     state.append(0)
                 elif var == 'day':
                     state.append(1)
                 elif var == 'demand_SMA':
                     state.append(0)
-                elif var == 'attack_flag':
+                elif var == 'under_attack':
                     state.append(0)
                 else:
                     state.append(0)
@@ -195,7 +216,7 @@ class WaterNetworkEnvironment(Environment):
             days_per_week = 7
             current_hour = 0    # TODO: modify current hour
 
-            for var in self.state_vars.keys():
+            for var in self.state_vars:
                 if var == 'time':
                     state.append(self.curr_time % seconds_per_day)
                 elif var == 'day':
@@ -204,15 +225,16 @@ class WaterNetworkEnvironment(Environment):
                     state.append(self.demand_moving_average.iloc[current_hour])
                 elif var == 'under_attack':
                     attack_flag = 0
-                    for plc in self.plc_vars.keys():
-                        if readings[plc]['attack_flag']:
+                    # Checks if one of the sensor plc is compromised by a ongoing attack
+                    for sensor in self.sensor_plcs:
+                        if readings[sensor.name]['under_attack']:
                             attack_flag = 1
                             break
                     state.append(attack_flag)
                 else:
-                    for plc in self.plc_vars.keys():
-                        if var in self.plc_vars[var]:
-                            state.append(readings[plc][var])
+                    for sensor in self.sensor_plcs:
+                        if var in readings[sensor.name].keys():
+                            state.append(readings[sensor.name][var]['pressure'])
 
         state = [np.float32(i) for i in state]
         return state
@@ -233,8 +255,8 @@ class WaterNetworkEnvironment(Environment):
                 multiplier = out_bound / (tank.maxlevel - tank.maxlevel * risk_percentage)
                 return penalty * multiplier
         return 0
-        #     if len(tank.results['pressure']) > 5:
-        #         last_levels = tank.results['pressure'][-5:-1]
+        #     if len(tank.experiments['pressure']) > 5:
+        #         last_levels = tank.experiments['pressure'][-5:-1]
         #         is_overflow = True
         #
         #         for level in last_levels:
@@ -274,6 +296,7 @@ class WaterNetworkEnvironment(Environment):
             reward = -n_actuators_updates/2 + dsr_ratio - overflow_penalty
             return reward
 
+    # TODO: fix object function with readings
     def evaluate(self):
         """
 

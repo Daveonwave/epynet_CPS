@@ -29,7 +29,7 @@ class BaseObject(object):
         self.network = weakref.ref(network)
         # cache of values
         self._values = {}
-        # dictionary of calculation results, only gets
+        # dictionary of calculation experiments, only gets
         # filled during solve() method
         self.results = {}
         # list of times

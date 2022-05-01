@@ -1,7 +1,6 @@
 if __name__ == '__main__':
-    from main.agent import objFunction
-    from main.physical_process import WaterDistributionNetwork
-    import pandas as pd
+    from epynet_cps.main.agent import objFunction
+    from epynet_cps.main.physical_process import WaterDistributionNetwork
     import datetime
 
     net = WaterDistributionNetwork("anytown_map.inp")
@@ -59,7 +58,7 @@ if __name__ == '__main__':
     times = [datetime.timedelta(seconds=time) for time in net.times]
     # net.set_basedemand_pattern(2)
     # net.set_time_params(duration=3600)
-    # print(net.pumps.results.index)
+    # print(net.pumps.experiments.index)
 
     # print(net.df_links_report.iloc[:, net.df_links_report.columns.get_level_values(2) == 'status'])
     for time in times[:5]:

@@ -1,11 +1,17 @@
-from main.physical_process_new import WaterDistributionNetwork
+from physical_process_new import WaterDistributionNetwork
+
 
 class GenericPLC:
-    def __init__(self, name, wn:WaterDistributionNetwork, plc_variables, attacks):
+    def __init__(self, name, wn: WaterDistributionNetwork, plc_variables, attacks=None):
+        """
+        :param name:
+        :param wn:
+        :param plc_variables:
+        :param attacks:
+        """
         self.name = name
         self.wn = wn
 
-        # TODO: this should be a list of "uids: property"
         self.owned_vars = plc_variables
         self.attacks = attacks
 
@@ -25,9 +31,11 @@ class GenericPLC:
     def save_ground_data(self):
         pass
 
-    # return 1 if the attack is ongoing, 0 otherwise
-    def check_attack_ongoing(self):
-        pass
+    def check_for_ongoing_attacks(self):
+        if self.attacks:
+            return 1
+        else:
+            return 0
 
     # modifies the captured readings depending on the kind of attack
     def inject_attack(self):
@@ -40,21 +48,25 @@ class SensorPLC(GenericPLC):
         """
         Reads data from the physical process
         """
-        readings = []
+        readings = {}
+        # time used to print results
         self.elapsed_time = self.wn.times[-1]
 
         # TODO: list of data passed as parameter in config file
-        for key, prop in self.owned_vars:
-            readings.append({key: self.wn.nodes[key].results[prop][-1]})
+        for var in self.owned_vars.keys():
+            readings[var] = {}
+            for prop in self.owned_vars[var]:
+                readings[var][prop] = self.wn.nodes[var].results[prop][-1]
 
+        #print(self.name + ' reads...')
         # self.save_ground_data()
 
         # Apply attacks
-        if self.check_attack_ongoing():
+        if self.check_for_ongoing_attacks():
             self.inject_attack()
             # save altered readings
 
-        readings.append({'attack_flag': self.ongoing_attack_flag})
+        readings['under_attack'] = self.ongoing_attack_flag
         return readings
 
 
@@ -71,8 +83,10 @@ class ActuatorPLC(GenericPLC):
         for i, key in enumerate(new_status_dict.keys()):
             new_status_dict[key] = int(bin_action[i])
 
+        #print(new_status_dict)
+
         # Apply attacks
-        if self.check_attack_ongoing():
+        if self.check_for_ongoing_attacks():
             self.inject_attack()
 
         # Update pump status

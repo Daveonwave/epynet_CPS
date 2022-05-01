@@ -2,8 +2,8 @@ import pandas as pd
 import datetime
 from tqdm import tqdm
 from time import sleep
-from main import epynetUtils
-from main.epynet.network import Network
+import epynetUtils
+from epynet.network import Network
 
 
 class WaterDistributionNetwork(Network):
@@ -105,10 +105,8 @@ class WaterDistributionNetwork(Network):
         progress_bar = tqdm(total=self.ep.ENgettimeparam(0))
         # Timestep becomes 0 at the last hydraulic step
         while timestep > 0:
-            timestep, state = self.simulate_step(curr_time=curr_time)
+            timestep = self.simulate_step(curr_time=curr_time)
             curr_time += timestep
-
-            sleep(0.01)
             progress_bar.update(timestep)
 
         progress_bar.close()

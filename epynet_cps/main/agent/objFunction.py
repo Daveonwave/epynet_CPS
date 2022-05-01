@@ -1,5 +1,5 @@
-from main.physical_process import WaterDistributionNetwork
 import datetime
+from physical_process_new import WaterDistributionNetwork
 
 
 def flow_demand_ratio(wds: WaterDistributionNetwork, driven_links):
@@ -84,14 +84,14 @@ def supply_demand_ratio(wds: WaterDistributionNetwork, target_junctions=None):
 
     if target_junctions:
         for i, time in enumerate(wds.times):
-            actual_demand = sum([wds.junctions[junc_id].actual_demand.loc[time] for junc_id in target_junctions ])
+            demand = sum([wds.junctions[junc_id].demand.loc[time] for junc_id in target_junctions ])
             basedemand = sum([wds.junctions[junc_id].results['basedemand'][i] for junc_id in target_junctions])
-            ratios.append(actual_demand/basedemand if actual_demand/basedemand <= 1 else float(1))
+            ratios.append(demand/basedemand if demand/basedemand <= 1 else float(1))
     else:
         for i, time in enumerate(wds.times):
-            actual_demand = wds.junctions.actual_demand.loc[time].sum()
+            demand = wds.junctions.demand.loc[time].sum()
             basedemand = sum([wds.junctions[junc_id].results['basedemand'][i] for junc_id in wds.junctions.uid])
-            ratios.append(actual_demand/basedemand if actual_demand/basedemand <= 1 else float(1))
+            ratios.append(demand/basedemand if demand/basedemand <= 1 else float(1))
 
     # print("len_ratios: ", len(ratios))
 
@@ -108,15 +108,15 @@ def step_supply_demand_ratio(wds: WaterDistributionNetwork, target_junctions=Non
     ratios = []
 
     if target_junctions:
-        actual_demand = sum([wds.junctions[junc_id].actual_demand.iloc[-1] for junc_id in target_junctions])
+        demand = sum([wds.junctions[junc_id].demand.iloc[-1] for junc_id in target_junctions])
         basedemand = sum([wds.junctions[junc_id].results['basedemand'][-1] for junc_id in target_junctions])
-        #ratios.append(actual_demand / basedemand if actual_demand / basedemand <= 1 else float(1))
+        #ratios.append(demand / basedemand if demand / basedemand <= 1 else float(1))
     else:
-        actual_demand = wds.junctions.actual_demand.iloc[-1].sum()
+        demand = wds.junctions.demand.iloc[-1].sum()
         basedemand = sum([wds.junctions[junc_id].results['basedemand'][-1] for junc_id in wds.junctions.uid])
-        #ratios.append(actual_demand / basedemand if actual_demand / basedemand <= 1 else float(1))
+        #ratios.append(demand / basedemand if demand / basedemand <= 1 else float(1))
 
-    ratio = actual_demand / basedemand if actual_demand / basedemand <= 1 else float(1)
+    ratio = demand / basedemand if demand / basedemand <= 1 else float(1)
     # print("len_ratios: ", len(ratios))
     return ratio
     #return sum(ratios) / len(ratios)
