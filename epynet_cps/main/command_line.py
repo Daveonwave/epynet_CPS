@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 import yaml
-from physical_process_new import WaterDistributionNetwork
-from agent.dqn_new import DeepQNetwork
+from physical_process import WaterDistributionNetwork
+from agent.dqn import DeepQNetwork
 
 config_folder = Path("../experiments")
 
@@ -49,7 +49,7 @@ class Runner:
 
         wn = WaterDistributionNetwork(env_settings['town'] + '.inp')
         wn.set_time_params(duration=env_settings['duration'], hydraulic_step=env_settings['hyd_step'])
-        # TODO: set all the configuration needed before starting the experiment like tanks level and demand patterns
+        #TODO: set all the configuration needed before starting the experiment like tanks level and demand patterns
         wn.run()
 
     def run_agent_experiment(self, config_files):
@@ -57,7 +57,7 @@ class Runner:
 
         """
         config_files = [Path(config_folder / self.exp_configs['experiment_folder'] / config_files[key])
-                        for key in config_files.keys()]
+                        if config_files[key] else None for key in config_files.keys()]
         self.agent.build_env(*config_files)
         self.agent.run()
 

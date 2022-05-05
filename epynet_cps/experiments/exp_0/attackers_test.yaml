@@ -1,0 +1,48 @@
+- name: attack1
+  type: MITM
+  trigger:
+    start: 2000 #204
+    end: 15000
+  tags:
+    - tag: T41
+      property: pressure
+      value: 0.1
+  target: PLC2
+
+- name: attack2
+  type: DOS
+  trigger:
+    type: time
+    start: 10000
+    end: 30000
+  tags:
+    - tag: T42
+      property: pressure
+      value: 10
+  target: PLC2
+
+- name: attack3
+  type: NetworkDelay
+  trigger:
+    type: time
+    start: 15000
+    end: 45000
+  tags:
+     - tag: T41
+       property: pressure
+       value: 0.1
+  target: PLC3
+
+- name: attack4
+  type: MITM
+  trigger:
+    type: time
+    start: 40000
+    end: 50000
+  tags:
+     - tag: T41
+       property: pressure
+       value: 0.1
+  target: PLC2
+
+

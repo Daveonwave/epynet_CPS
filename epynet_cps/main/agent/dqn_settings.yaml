@@ -1,10 +1,10 @@
 agent:
     load: False
     load_as: 'saved_models/overflow.msh'
-    batch_size: 32
+    batch_size: 64
     target_update_frequency: 50
-    initial_replay_memory: 500
-    max_replay_size: 40000
+    initial_replay_memory: 5000
+    max_replay_size: 100000
 
 nn:
     hidden_size: 5
@@ -13,6 +13,6 @@ optimizer:
     lr: .00025
 
 learning:
-    epochs: 10
-    train_episodes: 5
+    epochs: 1
+    train_episodes: 1
     train_frequency: 4

@@ -1,7 +1,8 @@
 town: 'anytown_map'
 
-duration: 60480    # 1 week
-hyd_step: 600
+#duration: 86400    # 1 day
+duration: 604800    # 1 week
+hyd_step: 300       # 5 min
 pattern_step: 3600
 
 state_vars:

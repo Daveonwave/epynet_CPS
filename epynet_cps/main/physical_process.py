@@ -2,12 +2,8 @@ import pandas as pd
 import datetime
 from tqdm import tqdm
 from time import sleep
-from epynet_cps.main import epynetUtils
-from epynet_cps.main.epynet.network import Network
-
-# TODO: remove global variables
-actuators_update_dict = {}
-# step_count = 0
+import epynetUtils
+from epynet.network import Network
 
 
 class WaterDistributionNetwork(Network):
@@ -17,6 +13,8 @@ class WaterDistributionNetwork(Network):
         self.df_nodes_report = None
         self.df_links_report = None
         self.times = []
+
+        self.sensor_plcs = []
 
         # Interactive flag can be set in run() or in init_simulation() if you want to build manually the step-by-step
         self.interactive = False
@@ -105,24 +103,15 @@ class WaterDistributionNetwork(Network):
         timestep = 1
 
         progress_bar = tqdm(total=self.ep.ENgettimeparam(0))
-        # timestep becomes 0 the last hydraulic step
+        # Timestep becomes 0 at the last hydraulic step
         while timestep > 0:
-            timestep, state = self.simulate_step(curr_time=curr_time, actuators_status=actuators_update_dict)
+            timestep = self.simulate_step(curr_time=curr_time)
             curr_time += timestep
-
-            # in DHALSIM here there should be:
-            # update_state(state)
-
-            # TODO: remember to comment in DHALSIM
-            # if timestep != 0 and self.interactive:
-            #    self.update_actuators_status()
-            sleep(0.01)
             progress_bar.update(timestep)
 
         progress_bar.close()
         self.ep.ENcloseH()
         self.solved = True
-        self.create_df_reports()
 
     def init_simulation(self, interactive=False):
         """
@@ -134,50 +123,38 @@ class WaterDistributionNetwork(Network):
         self.ep.ENopenH()
         self.ep.ENinitH(flag=0)
 
-    def simulate_step(self, curr_time, actuators_status=None, get_state=True):
+    def simulate_step(self, curr_time):
         """
         Simulation of one step from the given time
-        :param actuators_status: dictionary with status update for actuators
         :param curr_time: current simulation time
-        :param get_state: flag to take the current state
         :return: time until the next event, if 0 the simulation is going to end
         """
         self.ep.ENrunH()
         timestep = self.ep.ENnextH()
 
-        # append new values to reports
+        # Append new values to reports
+        # TODO: remove with plcs
         self.times.append(curr_time)
         self.load_attributes(curr_time)
 
-        # update the status of actuators after the first step
-        # TODO: DHALSIM works with the status update here
-        # if actuators_status and self.interactive and timestep != 0:
-        #    self.update_actuators_status(actuators_status)
-
-        if get_state:
-            return timestep, self.get_network_state()
-        else:
-            return timestep
+        return timestep
 
     def update_actuators_status(self, new_status):
         """
         Set actuators (pumps and valves) status to a new current state
         :param new_status: dictionary of pumps with next value for their status
-        TODO: update with new_status and remove step_count
         """
         n_updates = 0
 
-        # global step_count
         for uid in new_status.keys():
-            # counts how many updates have been done
             if self.links[uid].status != new_status[uid]:
+                # Counts how many updates have been done
                 n_updates += 1
-            # self.links[uid].status = new_status[uid][step_count % 2]
             self.links[uid].status = new_status[uid]
-        # step_count += 1
 
         return n_updates
 
+    # TODO: change this one to be retrieved by sensors plc
     def get_network_state(self):
         """
         Retrieve the current values of the network in the form a pandas series of dictionaries.
@@ -216,8 +193,9 @@ class WaterDistributionNetwork(Network):
 
         tanks_ids = [uid for uid in self.tanks.uid]
         junctions_ids = [uid for uid in self.junctions.uid]
-        tanks_iterables = [['tanks'], tanks_ids, ['head', 'pressure', 'level']]
-        junct_iterables = [['junctions'], junctions_ids, ['head', 'pressure', 'basedemand', 'actual_demand', 'demand_deficit']]
+        tanks_iterables = [['tanks'], tanks_ids, ['head', 'pressure']]
+        junct_iterables = [['junctions'], junctions_ids,
+                           ['head', 'pressure', 'basedemand', 'actual_demand', 'demand_deficit']]
         tanks_indices = pd.MultiIndex.from_product(iterables=tanks_iterables, names=["node", "id", "properties"])
         junctions_indices = pd.MultiIndex.from_product(iterables=junct_iterables, names=["node", "id", "properties"])
 
@@ -262,9 +240,3 @@ class WaterDistributionNetwork(Network):
                 df_valves['valves', i, j] = self.valves.results[i][j]
 
             self.df_links_report = pd.concat([df_pumps, df_valves], axis=1)
-
-
-
-
-
-

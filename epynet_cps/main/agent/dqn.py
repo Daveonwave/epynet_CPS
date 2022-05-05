@@ -1,5 +1,8 @@
-import pandas as pd
 import yaml
+import pickle
+import pandas as pd
+from pathlib import Path
+from datetime import datetime
 from mushroom_rl.core import Core
 from mushroom_rl.algorithms.value import DQN
 from mushroom_rl.approximators.parametric import TorchApproximator
@@ -9,20 +12,25 @@ from mushroom_rl.utils.replay_memory import ReplayMemory
 from mushroom_rl.utils.callbacks import CollectDataset
 from torch.optim.adam import Adam
 from torch.nn import functional as F
+from .abstract_agent import AbstractAgent
 
 from . import nn
-from .rl_env_new import WaterNetworkEnvironment
+from .rl_env import WaterNetworkEnvironment
+from .logger import InfoLogger
+
+file_path = Path("agent/")
+results_path = 'agent/logs/'
+logger = InfoLogger(str(datetime.now().strftime("%d-%b-%Y_%H:%M:%S")), results_path)
 
 
-class DQNAgent:
+class DeepQNetwork(AbstractAgent):
     """
-
+    # TODO: change env without recreate the agent is not possible with DQN, maybe saving the tuned weights of NN
     """
-    def __init__(self, input_file):
-        with open(input_file, 'r') as fin:
-            self.hparams = yaml.safe_load(fin)
-
-        self.env = WaterNetworkEnvironment(self.hparams['town'] + ".inp")
+    def __init__(self, agent_config_file):
+        with open(file_path / agent_config_file, 'r') as fin:
+            self.model_configs = yaml.safe_load(fin)
+            self.output_file_path = None
 
         # Creating the epsilon greedy policy
         self.epsilon_train = LinearParameter(value=1., threshold_value=.01, n=300000)
@@ -30,14 +38,42 @@ class DQNAgent:
         self.epsilon_random = Parameter(value=1)
         self.pi = EpsGreedy(epsilon=self.epsilon_random)
 
-        if not self.hparams['agent']['load']:
+        # Callbacks
+        self.dataset = CollectDataset()
+
+        self.agent = None
+        self.env = None
+        self.core = None
+        self.optimizer = None
+        self.replay_buffer = None
+
+        self.scores = []
+        self.results = None
+
+    def build_env(self, env_file, attacks_train_file=None, attacks_test_file=None, output_file_path=None):
+        """
+        Build the current experiment model passing the configurations of both environment and attacks.
+        :param env_file:
+        :param attacks_train_file:
+        :param attacks_test_file:
+        :param output_file_path:
+        """
+        self.env = WaterNetworkEnvironment(env_config_file=env_file,
+                                           attacks_train_file=attacks_train_file,
+                                           attacks_test_file=attacks_test_file,
+                                           logger=logger
+                                           )
+
+        self.output_file_path = output_file_path
+
+        if not self.model_configs['agent']['load']:
             # Create the optimizer dictionary
             self.optimizer = dict()
             self.optimizer['class'] = Adam
-            self.optimizer['params'] = self.hparams['optimizer']
+            self.optimizer['params'] = self.model_configs['optimizer']
 
             # Set parameters of neural network taken by the torch approximator
-            nn_params = dict(hidden_size=self.hparams['nn']['hidden_size'])
+            nn_params = dict(hidden_size=self.model_configs['nn']['hidden_size'])
 
             # Create the approximator from the neural network we have implemented
             approximator = TorchApproximator
@@ -56,28 +92,23 @@ class DQNAgent:
             )
 
             # Build replay buffer
-            self.replay_buffer = ReplayMemory(initial_size=self.hparams['agent']['initial_replay_memory'],
-                                              max_size=self.hparams['agent']['max_replay_size'])
+            self.replay_buffer = ReplayMemory(initial_size=self.model_configs['agent']['initial_replay_memory'],
+                                              max_size=self.model_configs['agent']['max_replay_size'])
 
             self.agent = DQN(mdp_info=self.env.info,
                              policy=self.pi,
                              approximator=approximator,
                              approximator_params=approximator_params,
-                             batch_size=self.hparams['agent']['batch_size'],
-                             target_update_frequency=self.hparams['agent']['target_update_frequency'],
+                             batch_size=self.model_configs['agent']['batch_size'],
+                             target_update_frequency=self.model_configs['agent']['target_update_frequency'],
                              replay_memory=self.replay_buffer,
-                             initial_replay_size=self.hparams['agent']['initial_replay_memory'],
-                             max_replay_size=self.hparams['agent']['max_replay_size']
+                             initial_replay_size=self.model_configs['agent']['initial_replay_memory'],
+                             max_replay_size=self.model_configs['agent']['max_replay_size']
                              )
-
         else:
-            self.agent = DQN.load(self.hparams['agent']['load_as'])
+            self.agent = DQN.load(self.model_configs['agent']['load_as'])
 
-        # Callbacks
-        self.dataset = CollectDataset()
         self.core = Core(self.agent, self.env, callbacks_fit=[self.dataset])
-
-        self.scores = []
 
     def fill_replay_buffer(self):
         """
@@ -87,10 +118,10 @@ class DQNAgent:
         self.pi.set_epsilon(self.epsilon_random)
         #self.core.learn(n_episodes=1, n_steps_per_fit=self.hparams['agent']['initial_replay_memory'])
 
-        if self.replay_buffer.size < self.hparams['agent']['initial_replay_memory']:
+        if self.replay_buffer.size < self.model_configs['agent']['initial_replay_memory']:
             # Fill replay memory with random data
-            self.core.learn(n_steps=self.hparams['agent']['initial_replay_memory'] - self.replay_buffer.size,
-                            n_steps_per_fit=self.hparams['agent']['initial_replay_memory'], render=False)
+            self.core.learn(n_steps=self.model_configs['agent']['initial_replay_memory'] - self.replay_buffer.size,
+                            n_steps_per_fit=self.model_configs['agent']['initial_replay_memory'], render=False)
 
     def learn(self):
         """
@@ -100,8 +131,8 @@ class DQNAgent:
         self.env.on_eval = False
         self.pi.set_epsilon(self.epsilon_train)
         logger.training_phase()
-        self.core.learn(n_episodes=self.hparams['learning']['train_episodes'],
-                        n_steps_per_fit=self.hparams['learning']['train_frequency'],
+        self.core.learn(n_episodes=self.model_configs['learning']['train_episodes'],
+                        n_steps_per_fit=self.model_configs['learning']['train_frequency'],
                         render=False)
         logger.end_phase()
 
@@ -134,51 +165,61 @@ class DQNAgent:
 
         return df_dataset, qs_list
 
+    def save_results(self):
+        """
+        Save results: dataset and q_values.
+        TODO: create folder
+        """
+        if self.output_file_path:
+            print(self.output_file_path)
+            with open(self.output_file_path, 'wb') as fp:
+                pickle.dump(self.results, fp)
+            print(">>> Results saved!")
+        else:
+            print(self.results)
 
-if __name__ == '__main__':
+    def save_model(self):
+        """
+        # TODO: change the implementation of this method
+        """
+        file_name = self.model_configs['agent']['save_model_as'] + ".msh"
 
-    dqn = DQNAgent()
+        folder = Path(__file__).parents[3].absolute() / self.model_configs['agent']['model_path']
+        Path(folder).mkdir(parents=True, exist_ok=True)
 
-    if not dqn.hparams['agent']['load']:
-        # Not loaded agent, we need to train
-        n_epochs = dqn.hparams['learning']['epochs']
+        where = folder / file_name
+        self.agent.save(path=where, full_save=True)
+        print(">>> Model saved: ", file_name)
 
-        logger.experiment_summary("\n\tObservation space: TIME - DAY - T41_level - T42_level - J20_pressure\n"
-                                  "\tEpisode: 1 week\n"
-                                  "\tHydraulic_step: 5 min\n"
-                                  "\tUpdate every: step\n"
-                                  "\tEpochs: " + str(n_epochs) + "\n"
-                                  "\tTrain episodes per epochs: " + str(dqn.hparams['learning']['train_episodes']))
+    def run(self):
+        """
+        Run schedule of the current training and testing session.
+        # TODO: implement with schedule and option chosen from config file
+        """
+        if not self.model_configs['agent']['load']:
+            n_epochs = self.model_configs['learning']['epochs']
+            self.fill_replay_buffer()
 
-        dqn.fill_replay_buffer()
-        # agent.evaluate(get_data=False, collect_qs=False)
+            self.results = {'train': [], 'eval': []}
 
-        results = {'train': [], 'eval': []}
+            for epoch in range(1, n_epochs + 1):
+                logger.print_epoch(epoch)
+                self.learn()
 
-        for epoch in range(1, n_epochs + 1):
-            print(dqn.epsilon_train.get_value())
-            logger.print_epoch(epoch)
-            dqn.learn()
-            #_, qs = agent.evaluate(get_data=False, collect_qs=False)
-            #experiments['train'].append(qs)
+                self.env.curr_seed = 0
+                self.evaluate(get_data=False, collect_qs=False)
 
-        #agent.agent.save('saved_models/overflow_double_train_set.msh', full_save=True)
+        else:
+            self.results = {'eval': []}
 
-    else:
-        results = {'eval': []}
+        for seed in self.env.test_seeds:
+            self.env.curr_seed = seed
+            dataset, qs = self.evaluate(get_data=True, collect_qs=True)
+            # TODO: add attacks to results
+            res = {'dsr': self.env.dsr, 'updates': self.env.total_updates, 'seed': seed, 'dataset': dataset,
+                   'q_values': qs}
 
-    seeds = [0, 1, 2, 3]
-    for seed in seeds:
-        dqn.env.seed = seed
-        dataset, qs = dqn.evaluate(get_data=True, collect_qs=True)
-        res = {'dsr': dqn.env.dsr, 'updates': dqn.env.total_updates, 'seed': seed, 'dataset': dataset, 'q_values': qs,
-               'network_attacks': dqn.env.attacks, 'T41_ground': dqn.env.t41_ground, 'T42_ground': dqn.env.t42_ground}
-        results['eval'].append(res)
+            self.results['eval'].append(res)
 
-    import pickle
+        self.save_results()
 
-    with open('../../experiments/DQN/anytown/uninformed_agent_attacks', 'wb') as fp:
-        pickle.dump(results, fp)
-
-    #agent.env.wn.create_df_reports()
-    #agent.env.wn.df_nodes_report.to_csv("../df_report.csv")

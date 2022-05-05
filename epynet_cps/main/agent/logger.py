@@ -50,8 +50,9 @@ class InfoLogger:
         if self.logger:
             self.logger.strong_line()
 
-    def results(self, dsr, n_updates):
+    def log_results(self, seed, dsr, n_updates):
         if self.logger:
+            self.logger.info('Demand pattern: ' + str(seed))
             self.logger.info('DSR: ' + str(dsr))
             self.logger.info('Total updates: ' + str(n_updates))
             self.logger.weak_line()

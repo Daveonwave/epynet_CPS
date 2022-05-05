@@ -1,7 +1,9 @@
 agent_class: DeepQNetwork
-agent_config: 'dqn_config_new.yaml'
+agent_config: 'dqn_settings.yaml'
 meta-learning: false
 experiment_folder: 'exp_0'
 experiments:
     - env: 'env_config.yaml'
-      attacks: 'attacks_config.yaml'
+      attacks_train: 'attackers_train.yaml'
+      attacks_test: 'attackers_test.yaml'
+      output: '/results/attack_0'
