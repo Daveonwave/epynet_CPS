@@ -1,4 +1,4 @@
-from physical_process_new import WaterDistributionNetwork
+from physical_process import WaterDistributionNetwork
 
 # TODO: discuss the hierarchy (can differ between sensor and actuators).
 # Used when we have concurrent attacks to decide which one has to be applied before.

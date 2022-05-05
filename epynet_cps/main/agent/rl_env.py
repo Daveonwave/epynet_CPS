@@ -7,7 +7,7 @@ from mushroom_rl.core.environment import Environment, MDPInfo
 from mushroom_rl.utils.spaces import Discrete, Box
 from . import objFunction
 from network_ics.generic_plc import SensorPLC, ActuatorPLC
-from physical_process_new import WaterDistributionNetwork
+from physical_process import WaterDistributionNetwork
 from network_attacks.generic_attacker import MITM, DOS, NetworkDelay, AttackerGenerator
 
 demand_pattern_folder = Path("../demand_patterns")
