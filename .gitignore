@@ -270,14 +270,14 @@ dmypy.json
 cython_debug/
 
 # Csv file
-#*.csv
+*.csv
 
 # Epanet
 *.rpt
 .towns/*.rpt
 
 # demand_generation
-demand_generation/*
+demand_pattern_generator/*
 
 # saved model and logs
 *.msh
