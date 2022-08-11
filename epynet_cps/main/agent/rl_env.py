@@ -157,10 +157,8 @@ class WaterNetworkEnvironment(Environment):
                         self.attackers_generator = AttackerGenerator()
                     self.attackers_generator.parse_configuration(attackers_config['randomized_attacks'])
                     """
-                    CONTINUE FROM HERE
+                    CONTINUE FROM HERE FOR TRAIN RANDOMIZATION
                     """
-
-
 
         # Create moving average values
         if 'demand_SMA' in self.state_vars.keys():

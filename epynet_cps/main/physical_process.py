@@ -1,7 +1,7 @@
 import pandas as pd
 import datetime
+from pathlib import Path
 from tqdm import tqdm
-from time import sleep
 import epynetUtils
 from epynet.network import Network
 
@@ -195,7 +195,7 @@ class WaterDistributionNetwork(Network):
         junctions_ids = [uid for uid in self.junctions.uid]
         tanks_iterables = [['tanks'], tanks_ids, ['head', 'pressure']]
         junct_iterables = [['junctions'], junctions_ids,
-                           ['head', 'pressure', 'basedemand', 'actual_demand', 'demand_deficit']]
+                           ['head', 'pressure', 'basedemand', 'demand', 'demand_deficit']]
         tanks_indices = pd.MultiIndex.from_product(iterables=tanks_iterables, names=["node", "id", "properties"])
         junctions_indices = pd.MultiIndex.from_product(iterables=junct_iterables, names=["node", "id", "properties"])
 
@@ -240,3 +240,27 @@ class WaterDistributionNetwork(Network):
                 df_valves['valves', i, j] = self.valves.results[i][j]
 
             self.df_links_report = pd.concat([df_pumps, df_valves], axis=1)
+
+    def save_csv_reports(self, where_to_save, save_links=True, save_nodes=True):
+        """
+        Save the reports of links and nodes if existing
+        :param where_to_save: path where to save csv files
+        :param save_links:
+        :param save_nodes:
+        """
+        if save_links:
+            if self.df_links_report is not None:
+                print(self.df_links_report['pumps']['P79']['energy'])
+                Path(where_to_save).mkdir(parents=True, exist_ok=True)
+                timestamp = datetime.datetime.now().strftime('%Y_%m_%d-%I_%M_%p')
+                csv_name = "links-" + timestamp + '.csv'
+                print(where_to_save / csv_name)
+                self.df_links_report.to_csv(Path(where_to_save / csv_name), index_label=False)
+
+        if save_nodes:
+            if self.df_nodes_report is not None:
+                Path(where_to_save).mkdir(parents=True, exist_ok=True)
+                timestamp = datetime.datetime.now().strftime('%Y_%m_%d-%I_%M_%p')
+                csv_name = "nodes-" + timestamp + '.csv'
+                print(where_to_save / csv_name)
+                self.df_nodes_report.to_csv(Path(where_to_save / csv_name), index_label=False)

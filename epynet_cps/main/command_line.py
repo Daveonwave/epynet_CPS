@@ -25,26 +25,25 @@ class Runner:
         self.agent_disabled = agent_disabled
         self.agent = None
 
-    # TODO: launch the simulation with agent and without...
     def run(self):
         """
-
+        Launcher of the simulation with split the cases with and without a RL agent
         """
         if self.agent_disabled:
             for exp in self.exp_configs['experiments']:
-                self.run_no_agent_experiment(exp['env'])
+                self.run_no_agent_experiment(exp)
         else:
             self.build_rl_agent()
             for exp in self.exp_configs['experiments']:
                 self.run_agent_experiment(exp)
 
-    def run_no_agent_experiment(self, filename):
+    def run_no_agent_experiment(self, config_files):
         """
         Run a single no agent experiment.
         """
-        config_file_path = Path(config_folder / self.exp_configs['experiment_folder'] / filename)
+        env_config_path = Path(config_folder / self.exp_configs['experiment_folder'] / config_files['env'])
 
-        with open(config_file_path, 'r') as fin:
+        with open(env_config_path, 'r') as fin:
             env_settings = yaml.safe_load(fin)
 
         wn = WaterDistributionNetwork(env_settings['town'] + '.inp')
@@ -52,9 +51,13 @@ class Runner:
         #TODO: set all the configuration needed before starting the experiment like tanks level and demand patterns
         wn.run()
 
+        wn.create_df_reports()
+        where = Path(config_folder / self.exp_configs['experiment_folder'] / config_files['output'])
+        wn.save_csv_reports(where_to_save=where)
+
     def run_agent_experiment(self, config_files):
         """
-
+        Run a single experiment with RL agent.
         """
         config_files = [Path(config_folder / self.exp_configs['experiment_folder'] / config_files[key])
                         if config_files[key] else None for key in config_files.keys()]

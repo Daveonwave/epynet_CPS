@@ -171,7 +171,8 @@ class DeepQNetwork(AbstractAgent):
         TODO: create folder
         """
         if self.output_file_path:
-            print(self.output_file_path)
+            # Check if "results" directory exists
+            Path(self.output_file_path).parent.mkdir(parents=True, exist_ok=True)
             with open(self.output_file_path, 'wb') as fp:
                 pickle.dump(self.results, fp)
             print(">>> Results saved!")

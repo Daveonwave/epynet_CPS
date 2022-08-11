@@ -14,3 +14,11 @@ class AbstractAgent(ABC):
     @abstractmethod
     def run(self):
         pass
+
+    @abstractmethod
+    def save_results(self):
+        pass
+
+    @abstractmethod
+    def save_model(self):
+        pass

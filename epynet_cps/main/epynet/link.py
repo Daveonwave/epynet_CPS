@@ -3,6 +3,7 @@ from . import epanet2
 from .baseobject import BaseObject, lazy_property
 from .curve import Curve
 
+
 class Link(BaseObject):
     """ EPANET Link Class """
 
@@ -53,6 +54,7 @@ class Link(BaseObject):
     def path(self):
         return [self.from_node.coordinates] + self.vertices + [self.to_node.coordinates]
 
+
 class Pipe(Link):
     """ EPANET Pipe Class """
     link_type = 'pipe'
@@ -65,7 +67,7 @@ class Pipe(Link):
     @lazy_property
     def check_valve(self):
         type_code = self.network().ep.ENgetlinktype(self.index)
-        return (type_code == epanet2.EN_CVPIPE)
+        return type_code == epanet2.EN_CVPIPE
 
 
 class Pump(Link):

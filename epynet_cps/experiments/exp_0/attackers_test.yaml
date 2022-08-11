@@ -10,7 +10,7 @@
   target: PLC2
 
 - name: attack2
-  type: DOS
+  type: MITM
   trigger:
     type: time
     start: 10000
@@ -22,7 +22,7 @@
   target: PLC2
 
 - name: attack3
-  type: NetworkDelay
+  type: MITM
   trigger:
     type: time
     start: 15000
