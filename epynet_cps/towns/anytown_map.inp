@@ -83,8 +83,8 @@ Anytown master file for rl-wds
 
 [PUMPS]
 ;ID              	Node1           	Node2           	Parameters
- P78             	R40             	J20             	HEAD H1	;
- P79             	R40             	J20             	HEAD H1	;
+ P78             	R40             	J20             	HEAD H1	        SPEED 1;
+ P79             	R40             	J20             	HEAD H1	        SPEED 1;
 
 [VALVES]
 ;ID              	Node1           	Node2           	Diameter    	Type	Setting     	MinorLoss   

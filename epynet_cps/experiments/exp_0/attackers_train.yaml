@@ -1,7 +1,7 @@
 # RANDOM ATTACK FORMAT
 # -------------------------------------------------------------------------------------------------
 # Attack properties:
-#   - enable: allows the attacker to be strike the current simulation
+#   - enable: allows the attacker to be struck the current simulation
 #   - attacker_presence_chance: guarantees the presence of that attack in an episode depending on
 #     the provided percentage
 #   - duration: describes how much time the attack will last
@@ -19,7 +19,7 @@ randomized_attackers:
         max_occurrences: 5
 
     DOS:
-        enable: True
+        enable: Tr
         attacker_presence_chance: 0.5
         duration: 28800                 # 8 hours
         max_occurrences: 5

@@ -35,8 +35,8 @@ class WaterNetworkEnvironment(Environment):
 
         # Demand patterns
         self.patterns_train = env_config['pattern_files']['train']
-        self.patterns_train_full_range_csv = env_config['pattern_files']['train_full_range']
-        self.patterns_train_low_csv = env_config['pattern_files']['train_low']
+        # self.patterns_train_full_range_csv = env_config['pattern_files']['train_full_range']
+        # self.patterns_train_low_csv = env_config['pattern_files']['train_low']
         self.patterns_test_csv = env_config['pattern_files']['test']
 
         self.demand_moving_average = None
@@ -190,7 +190,7 @@ class WaterNetworkEnvironment(Environment):
         for plc in self.actuator_plcs:
             n_updates += plc.apply(action)
 
-        # n_updates = self.wn.update_actuators_status(new_status_dict)
+        # print('number of updates: ', n_updates)
         self.total_updates += n_updates
 
         # Simulate the next hydraulic step
@@ -210,10 +210,9 @@ class WaterNetworkEnvironment(Environment):
 
         # Retrieve current state and reward from the chosen action
         self._state = self.build_current_state(readings=self.readings)
-        #print(self._state)
         reward = self.compute_reward(n_updates)
 
-        info = None
+        info = {}
 
         if self.timestep == 0:
             self.done = True
@@ -242,8 +241,7 @@ class WaterNetworkEnvironment(Environment):
 
     def build_attacker(self, attacker):
         """
-        Builds attacks in two ways depending on if it is a train or test episode.
-
+        Builds attacks in two ways depending on if it is a train or test episode
         :param attacker:
         """
         evil_instance = globals()[attacker['type']]
@@ -275,14 +273,15 @@ class WaterNetworkEnvironment(Environment):
                     state.append(0)
                 else:
                     for sensor in self.sensor_plcs:
-                        if var in sensor.owned_vars:
+                        if var in sensor.owned_vars['nodes']:
+                            # print('VAR: ', var)
                             state.append(sensor.init_readings(var, 'pressure'))
-
         else:
             seconds_per_day = 3600 * 24
             days_per_week = 7
             current_hour = (self.curr_time % (seconds_per_day * days_per_week)) // 3600
 
+            # Retrieve from reading vars specified in the agent observation space
             for var in self.state_vars:
                 if var == 'time':
                     state.append(self.curr_time % seconds_per_day)
@@ -296,6 +295,7 @@ class WaterNetworkEnvironment(Environment):
                     for sensor in self.sensor_plcs:
                         if readings[sensor.name]['under_attack']:
                             attack_flag = 1
+                            # TODO: implement attack localization
                             break
                     state.append(attack_flag)
                 else:
@@ -303,12 +303,11 @@ class WaterNetworkEnvironment(Environment):
                         if var in readings[sensor.name].keys():
                             state.append(readings[sensor.name][var]['pressure'])
 
-        state = [np.float32(i) for i in state]
-        return state
+        return [np.float32(i) for i in state]
 
     def check_overflow(self):
         """
-        Check if the we have an overflow problem in the tanks. We have an overflow if after one hour we the tank is
+        Check if there is an overflow problem in the tanks. We have an overflow if after one hour we the tank is
         still at the maximum level.
         :return: penalty value
         """
@@ -326,6 +325,19 @@ class WaterNetworkEnvironment(Environment):
                     return penalty * multiplier
         return 0
 
+    def compute_flow_penalty(self):
+        """
+        TODO: to implement and substitute to update penalty
+        """
+        total_flow = 0
+
+        for pump in self.action_vars:
+            for sensor in self.sensor_plcs:
+                if pump in self.readings[sensor.name].keys():
+                    total_flow += self.readings[sensor.name][pump]['flow']
+
+        return total_flow
+
     def compute_reward(self, n_actuators_updates):
         """
         TODO: understand how to compute reward
@@ -334,8 +346,9 @@ class WaterNetworkEnvironment(Environment):
         :param n_actuators_updates:
         :return:
         """
-        # Overflow computation
+        # Overflow adn pump flow computation
         overflow_penalty = self.check_overflow()
+        flow_penalty = self.compute_flow_penalty()
 
         # DSR computation
         supplies = []
@@ -357,7 +370,7 @@ class WaterNetworkEnvironment(Environment):
         if self.update_every:
             return dsr_ratio - overflow_penalty
         else:
-            reward = -n_actuators_updates/2 + dsr_ratio - overflow_penalty
+            reward = dsr_ratio - overflow_penalty - flow_penalty
             return reward
 
     # TODO: fix object function with readings

@@ -52,8 +52,8 @@ class Runner:
         wn.run()
 
         wn.create_df_reports()
-        where = Path(config_folder / self.exp_configs['experiment_folder'] / config_files['output'])
-        wn.save_csv_reports(where_to_save=where)
+        where = Path(config_folder / self.exp_configs['experiment_folder'] / config_files['output_folder'])
+        wn.save_csv_reports(where_to_save=where, save_links=False, save_nodes=False)
 
     def run_agent_experiment(self, config_files):
         """

@@ -24,7 +24,7 @@ def supply_demand_ratio(supplies, base_demands):
 
 def step_supply_demand_ratio(supplies, base_demands):
     """
-    Compute DSR for the current step.
+    Compute DSR for the current step
     :param supplies: current step junctions actual demand
     :type supplies: list
     :param base_demands: current step junctions base demand

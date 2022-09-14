@@ -427,8 +427,6 @@ class Network(object):
                         self.vertices[components[0]] = []
                     self.vertices[components[0]].append((float(components[1]), float(components[2])))
 
-
-
     def close(self):
         print('closing')
         self.ep.ENdeleteproject()

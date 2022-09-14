@@ -86,7 +86,7 @@ class DeepQNetwork(AbstractAgent):
                 n_actions=self.env.info.action_space.n,
                 optimizer=self.optimizer,
                 loss=F.smooth_l1_loss,
-                batch_size=0,
+                batch_size=16,
                 use_cuda=False,
                 **nn_params
             )
@@ -116,7 +116,7 @@ class DeepQNetwork(AbstractAgent):
         :return:
         """
         self.pi.set_epsilon(self.epsilon_random)
-        #self.core.learn(n_episodes=1, n_steps_per_fit=self.hparams['agent']['initial_replay_memory'])
+        # self.core.learn(n_episodes=1, n_steps_per_fit=self.hparams['agent']['initial_replay_memory'])
 
         if self.replay_buffer.size < self.model_configs['agent']['initial_replay_memory']:
             # Fill replay memory with random data
@@ -159,21 +159,25 @@ class DeepQNetwork(AbstractAgent):
         if get_data:
             df_dataset = pd.DataFrame(dataset, columns=['current_state', 'action', 'reward', 'next_state',
                                                         'absorbing_state', 'last_step'])
+            df_dataset['timestamp'] = self.env.wn.times
+            df_dataset = df_dataset[['timestamp', 'current_state', 'action', 'reward', 'next_state', 'absorbing_state',
+                                     'last_step']]
+
         if collect_qs:
             qs_list = self.agent.approximator.model.network.retrieve_qs()
             self.agent.approximator.model.network.collect_qs_enabled(False)
 
         return df_dataset, qs_list
 
-    def save_results(self):
+    def save_results(self, do_save=False):
         """
         Save results: dataset and q_values.
         TODO: create folder
         """
-        if self.output_file_path:
+        if do_save:
             # Check if "results" directory exists
-            Path(self.output_file_path).parent.mkdir(parents=True, exist_ok=True)
-            with open(self.output_file_path, 'wb') as fp:
+            Path(self.output_file_path).mkdir(parents=True, exist_ok=True)
+            with open(self.output_file_path / "dataset", 'wb') as fp:
                 pickle.dump(self.results, fp)
             print(">>> Results saved!")
         else:
@@ -207,6 +211,7 @@ class DeepQNetwork(AbstractAgent):
                 logger.print_epoch(epoch)
                 self.learn()
 
+                # Evaluation at the end of the epoch
                 self.env.curr_seed = 0
                 self.evaluate(get_data=False, collect_qs=False)
 
@@ -215,12 +220,23 @@ class DeepQNetwork(AbstractAgent):
 
         for seed in self.env.test_seeds:
             self.env.curr_seed = seed
-            dataset, qs = self.evaluate(get_data=True, collect_qs=True)
+            dataset, qs = self.evaluate(get_data=self.model_configs['results']['dataset'],
+                                        collect_qs=self.model_configs['results']['q_values'])
             # TODO: add attacks to results
             res = {'dsr': self.env.dsr, 'updates': self.env.total_updates, 'seed': seed, 'dataset': dataset,
                    'q_values': qs}
 
             self.results['eval'].append(res)
 
-        self.save_results()
+            # Create and saves nodes and links reports
+            if self.model_configs['results']['save_results']:
+                self.env.wn.create_df_reports(do_create_nodes_report=self.model_configs['results']['nodes_report'],
+                                              do_create_links_report=self.model_configs['results']['links_report'])
+                self.env.wn.save_csv_reports(where_to_save=self.output_file_path,
+                                             suffix=str(seed),
+                                             save_links=self.model_configs['results']['links_report'],
+                                             save_nodes=self.model_configs['results']['nodes_report'])
+
+        self.save_results(do_save=self.model_configs['results']['save_results'])
+
 

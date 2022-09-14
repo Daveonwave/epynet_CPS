@@ -40,7 +40,7 @@ class BaseObject(object):
     def get_index(self, uid):
         raise NotImplementedError
 
-    def set_object_value(self, code, value):
+    def  set_object_value(self, code, value):
         raise NotImplementedError
 
     def get_object_value(self, code):

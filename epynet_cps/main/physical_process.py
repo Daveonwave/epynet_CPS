@@ -129,6 +129,7 @@ class WaterDistributionNetwork(Network):
         :param curr_time: current simulation time
         :return: time until the next event, if 0 the simulation is going to end
         """
+        # uids = ['P78', 'P79']
         self.ep.ENrunH()
         timestep = self.ep.ENnextH()
 
@@ -136,6 +137,9 @@ class WaterDistributionNetwork(Network):
         # TODO: remove with plcs
         self.times.append(curr_time)
         self.load_attributes(curr_time)
+
+        #for uid in uids:
+        #    print('Pump ' + uid + ' status AFTER load attributes:' + str(self.links[uid].results['status'][-1]))
 
         return timestep
 
@@ -180,7 +184,7 @@ class WaterDistributionNetwork(Network):
                 network_state[uid] = links_dict
         return network_state
 
-    def create_df_reports(self):
+    def create_df_reports(self, do_create_nodes_report=False, do_create_links_report=False):
         """
         Create nodes and links report dataframes - 3 level dataframe
         How to access: df['node', 'id', 'property'] -> column
@@ -191,76 +195,77 @@ class WaterDistributionNetwork(Network):
         if self.df_links_report is not None:
             del self.df_links_report
 
-        tanks_ids = [uid for uid in self.tanks.uid]
-        junctions_ids = [uid for uid in self.junctions.uid]
-        tanks_iterables = [['tanks'], tanks_ids, ['head', 'pressure']]
-        junct_iterables = [['junctions'], junctions_ids,
-                           ['head', 'pressure', 'basedemand', 'demand', 'demand_deficit']]
-        tanks_indices = pd.MultiIndex.from_product(iterables=tanks_iterables, names=["node", "id", "properties"])
-        junctions_indices = pd.MultiIndex.from_product(iterables=junct_iterables, names=["node", "id", "properties"])
+        if do_create_nodes_report:
+            tanks_ids = [uid for uid in self.tanks.uid]
+            junctions_ids = [uid for uid in self.junctions.uid]
+            tanks_iterables = [['tanks'], tanks_ids, ['head', 'pressure']]
+            junct_iterables = [['junctions'], junctions_ids,
+                               ['head', 'pressure', 'basedemand', 'demand', 'demand_deficit']]
+            tanks_indices = pd.MultiIndex.from_product(iterables=tanks_iterables, names=["node", "id", "properties"])
+            junctions_indices = pd.MultiIndex.from_product(iterables=junct_iterables, names=["node", "id", "properties"])
 
-        # We use timestamp as index for both nodes and links dataframes
-        times = [datetime.timedelta(seconds=time) for time in self.times]
+            # We use timestamp as index for both nodes and links dataframes
+            times = [datetime.timedelta(seconds=time) for time in self.times]
 
-        # Nodes dataframes creation
-        df_tanks = pd.DataFrame(columns=tanks_indices, index=times)
-        df_junctions = pd.DataFrame(columns=junctions_indices, index=times)
+            # Nodes dataframes creation
+            df_tanks = pd.DataFrame(columns=tanks_indices, index=times)
+            df_junctions = pd.DataFrame(columns=junctions_indices, index=times)
 
-        # Dataframe filling
-        for i, j in zip(df_tanks.columns.get_level_values(1), df_tanks.columns.get_level_values(2)):
-            df_tanks['tanks', i, j] = self.tanks.results[i][j]
-        for i, j in zip(df_junctions.columns.get_level_values(1), df_junctions.columns.get_level_values(2)):
-            df_junctions['junctions', i, j] = self.junctions.results[i][j]
+            # Dataframe filling
+            for i, j in zip(df_tanks.columns.get_level_values(1), df_tanks.columns.get_level_values(2)):
+                df_tanks['tanks', i, j] = self.tanks.results[i][j]
+            for i, j in zip(df_junctions.columns.get_level_values(1), df_junctions.columns.get_level_values(2)):
+                df_junctions['junctions', i, j] = self.junctions.results[i][j]
 
-        self.df_nodes_report = pd.concat([df_tanks, df_junctions], axis=1)
+            self.df_nodes_report = pd.concat([df_tanks, df_junctions], axis=1)
 
-        # We can assume that there is always at least one pump in each network, since would be pointless to study a wds
-        # without this kind of links.
-        pumps_ids = [uid for uid in self.pumps.uid]
-        pumps_iterables = [['pumps'], pumps_ids, ['flow', 'energy', 'status']]
-        pumps_indices = pd.MultiIndex.from_product(iterables=pumps_iterables, names=["link", "id", "properties"])
-        df_pumps = pd.DataFrame(columns=pumps_indices, index=times)
+        if do_create_links_report:
+            # We can assume that there is always at least one pump in each network, since would be pointless to study a
+            # wds without this kind of links.
+            pumps_ids = [uid for uid in self.pumps.uid]
+            pumps_iterables = [['pumps'], pumps_ids, ['flow', 'energy', 'status']]
+            pumps_indices = pd.MultiIndex.from_product(iterables=pumps_iterables, names=["link", "id", "properties"])
 
-        # Pump dataframe filling and columns renaming
-        for i, j in zip(df_pumps.columns.get_level_values(1), df_pumps.columns.get_level_values(2)):
-            df_pumps['pumps', i, j] = self.pumps.results[i][j]
+            # We use timestamp as index for both nodes and links dataframes
+            times = [datetime.timedelta(seconds=time) for time in self.times]
+            df_pumps = pd.DataFrame(columns=pumps_indices, index=times)
 
-        self.df_links_report = df_pumps
+            # Pump dataframe filling and columns renaming
+            for i, j in zip(df_pumps.columns.get_level_values(1), df_pumps.columns.get_level_values(2)):
+                df_pumps['pumps', i, j] = self.pumps.results[i][j]
 
-        # We cannot do the same assumption for valves, as we can see in "anytown" network
-        if self.valves:
-            valves_ids = [uid for uid in self.valves.uid]
-            valves_iterables = [['valves'], valves_ids, ['velocity', 'flow', 'status']]
-            valves_indices = pd.MultiIndex.from_product(iterables=valves_iterables, names=["link", "id", "properties"])
+            self.df_links_report = df_pumps
 
-            df_valves = pd.DataFrame(columns=valves_indices, index=times)
+            # We cannot do the same assumption for valves, as we can see in "anytown" network
+            if self.valves:
+                valves_ids = [uid for uid in self.valves.uid]
+                valves_iterables = [['valves'], valves_ids, ['velocity', 'flow', 'status']]
+                valves_indices = pd.MultiIndex.from_product(iterables=valves_iterables, names=["link", "id", "properties"])
 
-            # Valves dataframe filling and columns renaming
-            for i, j in zip(df_valves.columns.get_level_values(1), df_valves.columns.get_level_values(2)):
-                df_valves['valves', i, j] = self.valves.results[i][j]
+                df_valves = pd.DataFrame(columns=valves_indices, index=times)
 
-            self.df_links_report = pd.concat([df_pumps, df_valves], axis=1)
+                # Valves dataframe filling and columns renaming
+                for i, j in zip(df_valves.columns.get_level_values(1), df_valves.columns.get_level_values(2)):
+                    df_valves['valves', i, j] = self.valves.results[i][j]
 
-    def save_csv_reports(self, where_to_save, save_links=True, save_nodes=True):
+                self.df_links_report = pd.concat([df_pumps, df_valves], axis=1)
+
+    def save_csv_reports(self, where_to_save, suffix='', save_links=True, save_nodes=True):
         """
         Save the reports of links and nodes if existing
         :param where_to_save: path where to save csv files
+        :param suffix: suffix used as a discriminant for multiple reports
         :param save_links:
         :param save_nodes:
         """
         if save_links:
             if self.df_links_report is not None:
-                print(self.df_links_report['pumps']['P79']['energy'])
                 Path(where_to_save).mkdir(parents=True, exist_ok=True)
-                timestamp = datetime.datetime.now().strftime('%Y_%m_%d-%I_%M_%p')
-                csv_name = "links-" + timestamp + '.csv'
-                print(where_to_save / csv_name)
+                csv_name = "links" + suffix + ".csv"
                 self.df_links_report.to_csv(Path(where_to_save / csv_name), index_label=False)
 
         if save_nodes:
             if self.df_nodes_report is not None:
                 Path(where_to_save).mkdir(parents=True, exist_ok=True)
-                timestamp = datetime.datetime.now().strftime('%Y_%m_%d-%I_%M_%p')
-                csv_name = "nodes-" + timestamp + '.csv'
-                print(where_to_save / csv_name)
+                csv_name = "nodes" + suffix + ".csv"
                 self.df_nodes_report.to_csv(Path(where_to_save / csv_name), index_label=False)

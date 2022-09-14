@@ -52,7 +52,7 @@ class GenericPLC:
 
         if self.attackers:
             curr_attackers = [attacker for attacker in self.attackers
-                         if attacker.event_start <= self.elapsed_time < attacker.event_end]
+                              if attacker.event_start <= self.elapsed_time < attacker.event_end]
             if curr_attackers:
                 # Order the attackers following a predefined hierarchy
                 for item in attackers_hierarchy:
@@ -69,7 +69,7 @@ class SensorPLC(GenericPLC):
         """
 
         """
-        if var in self.owned_vars:
+        if var in self.owned_vars['nodes']:
             return getattr(self.wn.nodes[var], prop)
         else:
             raise Exception("Variable {} is not controlled by {}".format(var, self.name))
@@ -83,12 +83,11 @@ class SensorPLC(GenericPLC):
         self.elapsed_time = self.wn.times[-1]
 
         # TODO: list of data passed as parameter in config file
-        for var in self.owned_vars.keys():
-            readings[var] = {}
-            for prop in self.owned_vars[var]:
-                readings[var][prop] = self.wn.nodes[var].results[prop][-1]
-
-        #print(self.name + ' reads...')
+        for object_type in self.owned_vars.keys():
+            for var in self.owned_vars[object_type].keys():
+                readings[var] = {}
+                for prop in self.owned_vars[object_type][var]:
+                    readings[var][prop] = getattr(self.wn, object_type)[var].results[prop][-1]
         # self.save_ground_data()
 
         # Apply attacks

@@ -992,6 +992,12 @@ EN_HEADLOSS      = 10
 EN_STATUS        = 11
 EN_SETTING       = 12
 EN_ENERGY        = 13
+EN_PUMP_STATE    = 16
+
+EN_PUMP_XHEAD    = 0      # /* Pump State Type */
+EN_PUMP_CLOSED   = 1
+EN_PUMP_OPEN     = 2
+EN_PUMP_XFLOW    = 3
 
 EN_DURATION      = 0      # /* Time parameters */
 EN_HYDSTEP       = 1
