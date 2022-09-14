@@ -280,7 +280,7 @@ cython_debug/
 demand_pattern_generator/*
 
 # notebook files
-notebooks/to_load/*
+epynet_cps/notebooks/to_load/*
 
 # shared files (dropbox)
 shared_files/*
