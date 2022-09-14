@@ -42,16 +42,16 @@ action_vars:
     - 'P79'
 
 pattern_files:
-    train: 'anytown/demand_patterns_train_combined.csv'
+    train: 'anytown/demand_patterns_0-01_0-55_test.csv'
     train_full_range: 'anytown/demand_patterns_train_full_range.csv'
     train_low: 'anytown/demand_patterns_train_low.csv'
     test: 'anytown/demand_patterns_test_mixed.csv'
 
 test_seeds:
     - 0
-    - 1
-    - 2
-    - 3
+    #- 1
+    #- 2
+    #- 3
 # update_every: 14400     # 4hours
 update_every: null
 

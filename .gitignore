@@ -279,6 +279,9 @@ cython_debug/
 # demand_generation
 demand_pattern_generator/*
 
+# notebook files
+notebooks/to_load/*
+
 # shared files (dropbox)
 shared_files/*
 
