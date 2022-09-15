@@ -69,6 +69,10 @@ class WaterNetworkEnvironment(Environment):
         self.attackers = []
         self.attackers_generator = None
 
+        self.precedent_overflow_penalty = 0
+        self.penalty_coefficient = 1
+        #self.total_flow = 0
+        # self.highest_flow = {'P78': 872.9964647875464, 'P79': 883.5919152915154}
         # TODO: logger, shouldn't be necessary, we have to make it optional
         self.logger = logger
 
@@ -311,8 +315,18 @@ class WaterNetworkEnvironment(Environment):
         still at the maximum level.
         :return: penalty value
         """
-        penalty = 1
         risk_percentage = 0.9
+        overflow_penalty = 0
+
+        # The penalty coefficient will increase if there will be consecutive overflow events
+        if self.precedent_overflow_penalty > 0:
+            self.penalty_coefficient += self.penalty_coefficient * 0.01
+        else:
+            if self.penalty_coefficient > 1:
+                self.penalty_coefficient -= self.penalty_coefficient * 0.01
+
+        if self.penalty_coefficient < 1:
+            self.penalty_coefficient = 1
 
         for sensor in self.readings.keys():
             tanks = dict((key, self.readings[sensor][key]) for key in self.readings[sensor].keys()
@@ -322,21 +336,26 @@ class WaterNetworkEnvironment(Environment):
                     out_bound = tanks[tank]['pressure'] - (self.state_vars[tank]['bounds']['max'] * risk_percentage)
                     # Normalization of the out_bound pressure
                     multiplier = out_bound / ((1 - risk_percentage) * self.state_vars[tank]['bounds']['max'])
-                    return penalty * multiplier
-        return 0
+                    overflow_penalty = self.penalty_coefficient * multiplier
+
+        self.precedent_overflow_penalty = overflow_penalty
+        return overflow_penalty
 
     def compute_flow_penalty(self):
         """
         TODO: to implement and substitute to update penalty
         """
         total_flow = 0
+        lowest_flow = 0
+        highest_flow = 1000      # retrieved with empirical experiments
 
         for pump in self.action_vars:
             for sensor in self.sensor_plcs:
                 if pump in self.readings[sensor.name].keys():
                     total_flow += self.readings[sensor.name][pump]['flow']
 
-        return total_flow
+        # we return as penalty the max-min normalized flow
+        return (total_flow - lowest_flow) / (highest_flow - lowest_flow)
 
     def compute_reward(self, n_actuators_updates):
         """
@@ -370,7 +389,8 @@ class WaterNetworkEnvironment(Environment):
         if self.update_every:
             return dsr_ratio - overflow_penalty
         else:
-            reward = dsr_ratio - overflow_penalty - flow_penalty
+            reward = dsr_ratio * 0.35 - overflow_penalty * 0.35 - flow_penalty * 0.3
+            #reward = dsr_ratio - overflow_penalty - flow_penalty
             return reward
 
     # TODO: fix object function with readings

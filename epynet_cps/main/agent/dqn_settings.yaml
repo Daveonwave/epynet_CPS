@@ -3,7 +3,7 @@ agent:
     load_as: 'saved_models/overflow.msh'
     batch_size: 64
     target_update_frequency: 50
-    initial_replay_memory: 50000
+    initial_replay_memory: 5000
     max_replay_size: 100000
 
 nn:
