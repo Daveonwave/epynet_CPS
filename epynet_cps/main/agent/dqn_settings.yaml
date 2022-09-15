@@ -13,7 +13,7 @@ optimizer:
     lr: .00025
 
 learning:
-    epochs: 5
+    epochs: 10
     train_episodes: 10
     train_frequency: 4
 
