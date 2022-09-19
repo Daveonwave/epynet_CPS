@@ -1,3 +1,5 @@
+from pathlib import Path
+import pandas as pd
 from physical_process import WaterDistributionNetwork
 
 # TODO: discuss the hierarchy (can differ between sensor and actuators).
@@ -30,34 +32,61 @@ class GenericPLC:
         # initialize self.owned_vars through a config file
         pass
 
+    def reset_collected_data(self):
+        pass
+
     def set_attackers(self, attackers=None):
         """
         Set the attackers as a list of attacker objects
         """
         self.attackers = attackers
+        for object_type in self.owned_vars.keys():
+            for var in self.owned_vars[object_type].keys():
+                self.altered_readings[var] = {}
+                for prop in self.owned_vars[object_type][var]:
+                    self.altered_readings[var][prop] = []
 
     def apply(self, var_list):
         pass
 
-    def save_ground_data(self):
-        pass
+    def save_ground_data(self, output_file, seed):
+        """
+
+        """
+        Path(output_file).mkdir(parents=True, exist_ok=True)
+        dict_for_df = {(outerKey, innerKey): values for outerKey, innerDict in self.ground_readings.items()
+                       for innerKey, values in innerDict.items()}
+        df_ground = pd.DataFrame(dict_for_df, index=self.wn.times)
+        csv_filename = self.name + "_ground-" + str(seed) + ".csv"
+        df_ground.to_csv(output_file / csv_filename)
+
+    def save_altered_data(self, output_file, seed):
+        """
+
+        """
+        if self.altered_readings:
+            Path(output_file).mkdir(parents=True, exist_ok=True)
+            dict_for_df = {(outerKey, innerKey): values for outerKey, innerDict in self.altered_readings.items()
+                           for innerKey, values in innerDict.items()}
+            df_altered = pd.DataFrame(dict_for_df, index=self.wn.times)
+            csv_filename = self.name + "_altered-" + str(seed) + ".csv"
+            df_altered.to_csv(output_file / csv_filename)
 
     def check_for_ongoing_attacks(self):
         """
-        Check if there are ongoing attacks and return 1 in that case. Moreover it extracts active attackers to apply
+        Check if there are ongoing attacks and return 1 in that case. Moreover, it extracts active attackers to apply
         the injection of the attack.
         """
-        self.active_attackers = []
-        self.ongoing_attack_flag = 0
-
         if self.attackers:
             curr_attackers = [attacker for attacker in self.attackers
                               if attacker.event_start <= self.elapsed_time < attacker.event_end]
             if curr_attackers:
+                self.active_attackers = []
                 # Order the attackers following a predefined hierarchy
                 for item in attackers_hierarchy:
-                    self.active_attackers.extend([attacker for attacker in curr_attackers if type(attacker).__name__ == item])
-                print(self.name, [type(att).__name__ for att in self.active_attackers])
+                    self.active_attackers.extend([attacker for attacker in curr_attackers
+                                                  if type(attacker).__name__ == item])
+                # print(self.name, [type(att).__name__ for att in self.active_attackers])
                 self.ongoing_attack_flag = 1
 
         return self.ongoing_attack_flag
@@ -69,12 +98,24 @@ class SensorPLC(GenericPLC):
         """
 
         """
+        self.reset_collected_data()
+
         if var in self.owned_vars['nodes']:
             return getattr(self.wn.nodes[var], prop)
         else:
             raise Exception("Variable {} is not controlled by {}".format(var, self.name))
 
-    def apply(self, readings=None):
+    def reset_collected_data(self):
+        """
+
+        """
+        for object_type in self.owned_vars.keys():
+            for var in self.owned_vars[object_type].keys():
+                self.ground_readings[var] = {}
+                for prop in self.owned_vars[object_type][var]:
+                    self.ground_readings[var][prop] = []
+
+    def apply(self, var_list=None):
         """
         Reads data from the physical process
         """
@@ -88,15 +129,22 @@ class SensorPLC(GenericPLC):
                 readings[var] = {}
                 for prop in self.owned_vars[object_type][var]:
                     readings[var][prop] = getattr(self.wn, object_type)[var].results[prop][-1]
-        # self.save_ground_data()
+                    self.ground_readings[var][prop].append(readings[var][prop])
 
         # Apply attacks
         if self.check_for_ongoing_attacks():
             for attacker in self.active_attackers:
                 readings = attacker.apply_attack(readings)
-            # save altered readings
+
+        # Update altered readings
+        if self.altered_readings:
+            for var in readings.keys():
+                #print(var)
+                for prop in readings[var].keys():
+                    self.altered_readings[var][prop].append(readings[var][prop])
 
         readings['under_attack'] = self.ongoing_attack_flag
+        #print([attacker.old_readings for attacker in self.active_attackers if attacker.name == 'attack3'])
         return readings
 
 
@@ -107,8 +155,8 @@ class ActuatorPLC(GenericPLC):
         Reads data from agent's action space and apply them into the physical process
         """
         # Action translated in binary value with one bit for each pump status
-        new_status_dict = {pump_id: 0 for pump_id in self.owned_vars}
-        bin_action = '{0:0{width}b}'.format(action[0], width=len(self.owned_vars))
+        new_status_dict = {pump_id: 0 for pump_id in self.owned_vars['links'].keys()}
+        bin_action = '{0:0{width}b}'.format(action[0], width=len(self.owned_vars['links'].keys()))
 
         for i, key in enumerate(new_status_dict.keys()):
             new_status_dict[key] = int(bin_action[i])
@@ -121,5 +169,5 @@ class ActuatorPLC(GenericPLC):
         # TODO: understand how to handle attacks from actuators perspective
 
         # Update pump status
-        n_updates = self.wn.update_actuators_status(new_status=new_status_dict)
-        return n_updates
+        return self.wn.update_actuators_status(new_status=new_status_dict)
+

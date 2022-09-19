@@ -69,8 +69,14 @@ class WaterNetworkEnvironment(Environment):
         self.attackers = []
         self.attackers_generator = None
 
-        self.precedent_overflow_penalty = 0
-        self.penalty_coefficient = 1
+        # Overflow penalty at previous step and coefficient of penalty which increases for consecutive overflow events
+        #self.precedent_overflow_penalty = 0
+        self.overflow_penalty_coefficient = 1
+
+        # Pumps update penalty at previous step and coefficient of penalty which increases for consecutive updates
+        #self.precedent_pumps_update_penalty = {pump: 0 for pump in self.action_vars}
+        self.pumps_update_penalty_coefficient = {pump: 1 for pump in self.action_vars}
+
         #self.total_flow = 0
         # self.highest_flow = {'P78': 872.9964647875464, 'P79': 883.5919152915154}
         # TODO: logger, shouldn't be necessary, we have to make it optional
@@ -188,14 +194,12 @@ class WaterNetworkEnvironment(Environment):
         :param action:
         :return:
         """
-        n_updates = 0
+        pump_updates = {}
 
         # Actuator PLCs apply the action into the physical process
         for plc in self.actuator_plcs:
-            n_updates += plc.apply(action)
-
-        # print('number of updates: ', n_updates)
-        self.total_updates += n_updates
+            pump_updates.update(plc.apply(action))
+            self.total_updates += sum(pump_updates.values())
 
         # Simulate the next hydraulic step
         # TODO: understand if we want to simulate also intermediate steps (not as DHALSIM)
@@ -214,7 +218,7 @@ class WaterNetworkEnvironment(Environment):
 
         # Retrieve current state and reward from the chosen action
         self._state = self.build_current_state(readings=self.readings)
-        reward = self.compute_reward(n_updates)
+        reward = self.compute_reward(pump_updates)
 
         info = {}
 
@@ -318,16 +322,6 @@ class WaterNetworkEnvironment(Environment):
         risk_percentage = 0.9
         overflow_penalty = 0
 
-        # The penalty coefficient will increase if there will be consecutive overflow events
-        if self.precedent_overflow_penalty > 0:
-            self.penalty_coefficient += self.penalty_coefficient * 0.01
-        else:
-            if self.penalty_coefficient > 1:
-                self.penalty_coefficient -= self.penalty_coefficient * 0.01
-
-        if self.penalty_coefficient < 1:
-            self.penalty_coefficient = 1
-
         for sensor in self.readings.keys():
             tanks = dict((key, self.readings[sensor][key]) for key in self.readings[sensor].keys()
                          if key.startswith('T'))
@@ -336,12 +330,22 @@ class WaterNetworkEnvironment(Environment):
                     out_bound = tanks[tank]['pressure'] - (self.state_vars[tank]['bounds']['max'] * risk_percentage)
                     # Normalization of the out_bound pressure
                     multiplier = out_bound / ((1 - risk_percentage) * self.state_vars[tank]['bounds']['max'])
-                    overflow_penalty = self.penalty_coefficient * multiplier
+                    overflow_penalty = self.overflow_penalty_coefficient * multiplier
 
-        self.precedent_overflow_penalty = overflow_penalty
+        if overflow_penalty > 0:
+            self.overflow_penalty_coefficient += self.overflow_penalty_coefficient * 0.01
+        else:
+            if self.overflow_penalty_coefficient > 1:
+                self.overflow_penalty_coefficient -= self.overflow_penalty_coefficient * 0.01
+                if self.overflow_penalty_coefficient < 1:
+                    self.overflow_penalty_coefficient = 1
+
+
+        #print("coefficient: ", self.overflow_penalty_coefficient)
+        #print("penalty: ", overflow_penalty)
         return overflow_penalty
 
-    def compute_flow_penalty(self):
+    def check_pumps_flow(self):
         """
         TODO: to implement and substitute to update penalty
         """
@@ -357,17 +361,39 @@ class WaterNetworkEnvironment(Environment):
         # we return as penalty the max-min normalized flow
         return (total_flow - lowest_flow) / (highest_flow - lowest_flow)
 
-    def compute_reward(self, n_actuators_updates):
+    def check_pumps_updates(self, step_updates):
+        """
+        Check whether pumps status is update too frequently and compute an incremental penalty to discourage this
+        behaviour.
+        """
+        pumps_update_penalty = 0
+
+        for pump in self.action_vars:
+            if step_updates[pump] > 0:
+                pumps_update_penalty += step_updates[pump] * self.pumps_update_penalty_coefficient[pump]
+                self.pumps_update_penalty_coefficient[pump] += self.pumps_update_penalty_coefficient[pump] * 0.001
+            else:
+                if self.pumps_update_penalty_coefficient[pump] > 1:
+                    self.pumps_update_penalty_coefficient[pump] -= self.pumps_update_penalty_coefficient[pump] * 0.001
+                    if self.pumps_update_penalty_coefficient[pump] < 1:
+                        self.pumps_update_penalty_coefficient[pump] = 1
+
+        # Normalized between 0 and 1 wrt the number of the pumps
+        pumps_update_penalty /= len(self.action_vars)
+        return pumps_update_penalty
+
+    def compute_reward(self, step_pump_updates):
         """
         TODO: understand how to compute reward
         Compute the reward for the current step. It depends on the step_DSR and on the number of actuators updates.
 
-        :param n_actuators_updates:
+        :param step_pump_updates:
         :return:
         """
         # Overflow adn pump flow computation
         overflow_penalty = self.check_overflow()
-        flow_penalty = self.compute_flow_penalty()
+        flow_penalty = self.check_pumps_flow()
+        pumps_updates_penalty = self.check_pumps_updates(step_pump_updates)
 
         # DSR computation
         supplies = []
@@ -389,7 +415,7 @@ class WaterNetworkEnvironment(Environment):
         if self.update_every:
             return dsr_ratio - overflow_penalty
         else:
-            reward = dsr_ratio * 0.35 - overflow_penalty * 0.35 - flow_penalty * 0.3
+            reward = dsr_ratio * 0.36 - overflow_penalty * 0.53 - flow_penalty * 0.1 - pumps_updates_penalty * 0.01
             #reward = dsr_ratio - overflow_penalty - flow_penalty
             return reward
 

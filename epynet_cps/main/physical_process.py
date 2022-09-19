@@ -148,15 +148,16 @@ class WaterDistributionNetwork(Network):
         Set actuators (pumps and valves) status to a new current state
         :param new_status: dictionary of pumps with next value for their status
         """
-        n_updates = 0
+        step_updates = {}
 
         for uid in new_status.keys():
             if self.links[uid].status != new_status[uid]:
-                # Counts how many updates have been done
-                n_updates += 1
+                step_updates[uid] = 1
+            else:
+                step_updates[uid] = 0
             self.links[uid].status = new_status[uid]
 
-        return n_updates
+        return step_updates
 
     # TODO: change this one to be retrieved by sensors plc
     def get_network_state(self):

@@ -105,10 +105,11 @@ class DeepQNetwork(AbstractAgent):
                              initial_replay_size=self.model_configs['agent']['initial_replay_memory'],
                              max_replay_size=self.model_configs['agent']['max_replay_size']
                              )
+            self.core = Core(self.agent, self.env, callbacks_fit=[self.dataset])
         else:
-            self.agent = DQN.load(self.model_configs['agent']['load_as'])
-
-        self.core = Core(self.agent, self.env, callbacks_fit=[self.dataset])
+            self.agent = DQN.load(file_path / self.model_configs['agent']['load_as'])
+            self.core = Core(self.agent, self.env, callbacks_fit=[self.dataset])
+            self.pi = self.core.agent.policy
 
     def fill_replay_buffer(self):
         """
@@ -129,8 +130,17 @@ class DeepQNetwork(AbstractAgent):
         :return:
         """
         self.env.on_eval = False
-        self.pi.set_epsilon(self.epsilon_train)
         logger.training_phase()
+
+        if self.replay_buffer is None:
+            # Build replay buffer
+            self.replay_buffer = ReplayMemory(initial_size=self.model_configs['agent']['initial_replay_memory'],
+                                              max_size=self.model_configs['agent']['max_replay_size'])
+            self.pi.set_epsilon(self.epsilon_random)
+            self.core.learn(n_steps=self.model_configs['agent']['initial_replay_memory'] - self.replay_buffer.size,
+                            n_steps_per_fit=self.model_configs['agent']['initial_replay_memory'], render=False)
+
+        self.pi.set_epsilon(self.epsilon_train)
         self.core.learn(n_episodes=self.model_configs['learning']['train_episodes'],
                         n_steps_per_fit=self.model_configs['learning']['train_frequency'],
                         render=False)
@@ -149,7 +159,7 @@ class DeepQNetwork(AbstractAgent):
 
         self.agent.approximator.model.network.collect_qs_enabled(collect_qs)
 
-        dataset = self.core.evaluate(n_episodes=1, render=True)
+        dataset = self.core.evaluate(n_episodes=1, render=False)
         self.scores.append(logger.get_stats(dataset))
         logger.end_phase()
 
@@ -187,14 +197,11 @@ class DeepQNetwork(AbstractAgent):
         """
         # TODO: change the implementation of this method
         """
-        file_name = self.model_configs['agent']['save_model_as'] + ".msh"
-
-        folder = Path(__file__).parents[3].absolute() / self.model_configs['agent']['model_path']
-        Path(folder).mkdir(parents=True, exist_ok=True)
-
-        where = folder / file_name
-        self.agent.save(path=where, full_save=True)
-        print(">>> Model saved: ", file_name)
+        if self.model_configs['model']['save_model']:
+            file_name = self.model_configs['model']['save_as'] + ".msh"
+            Path(self.output_file_path).mkdir(parents=True, exist_ok=True)
+            self.agent.save(path=self.output_file_path / file_name, full_save=True)
+            print(">>> Model saved: ", file_name)
 
     def run(self):
         """
@@ -202,21 +209,18 @@ class DeepQNetwork(AbstractAgent):
         # TODO: implement with schedule and option chosen from config file
         """
         if not self.model_configs['agent']['load']:
-            n_epochs = self.model_configs['learning']['epochs']
             self.fill_replay_buffer()
 
-            self.results = {'train': [], 'eval': []}
+        self.results = {'train': [], 'eval': []}
+        n_epochs = self.model_configs['learning']['epochs']
 
-            for epoch in range(1, n_epochs + 1):
-                logger.print_epoch(epoch)
-                self.learn()
+        for epoch in range(0, n_epochs):
+            logger.print_epoch(epoch + 1)
+            self.learn()
 
-                # Evaluation at the end of the epoch
-                self.env.curr_seed = 0
-                self.evaluate(get_data=False, collect_qs=False)
-
-        else:
-            self.results = {'eval': []}
+            # Evaluation at the end of the epoch
+            self.env.curr_seed = 0
+            self.evaluate(get_data=False, collect_qs=False)
 
         for seed in self.env.test_seeds:
             self.env.curr_seed = seed
@@ -230,13 +234,11 @@ class DeepQNetwork(AbstractAgent):
 
             # Create and saves nodes and links reports
             if self.model_configs['results']['save_results']:
-                self.env.wn.create_df_reports(do_create_nodes_report=self.model_configs['results']['nodes_report'],
-                                              do_create_links_report=self.model_configs['results']['links_report'])
-                self.env.wn.save_csv_reports(where_to_save=self.output_file_path,
-                                             suffix=str(seed),
-                                             save_links=self.model_configs['results']['links_report'],
-                                             save_nodes=self.model_configs['results']['nodes_report'])
+                for sensor in self.env.sensor_plcs:
+                    sensor.save_ground_data(self.output_file_path, seed)
+                    sensor.save_altered_data(self.output_file_path, seed)
 
         self.save_results(do_save=self.model_configs['results']['save_results'])
+        self.save_model()
 
 

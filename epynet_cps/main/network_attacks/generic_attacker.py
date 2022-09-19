@@ -9,8 +9,6 @@ class GenericAttacker:
         self.event_end = event_end
         self.tags = tags
 
-        self.old_readings = None
-
     def apply_attack(self, variables):
         pass
 
@@ -26,15 +24,18 @@ class MITM(GenericAttacker):
 
 
 class DOS(GenericAttacker):
-    def apply_attack(self, variables):
+
+    def __init__(self, name, target, event_start, event_end, tags=None):
+        super().__init__(name, target, event_start, event_end, tags)
+        self.old_readings = {}
+
+    def apply_attack(self, readings):
         """
         # TODO: starts the DOS from the second timestep, otherwise we need to get the previous env state
         """
-        if self.old_readings:
-            variables = self.old_readings
-        else:
-            self.old_readings = variables
-        return variables
+        if not self.old_readings:
+            self.old_readings = readings.copy()
+        return self.old_readings.copy()
 
 
 class NetworkDelay(GenericAttacker):
