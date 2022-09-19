@@ -288,3 +288,6 @@ shared_files/*
 # saved model and logs
 *.msh
 *.log
+
+#experiments
+epynet_cps/experiments/*/results
