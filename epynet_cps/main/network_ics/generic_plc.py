@@ -77,6 +77,8 @@ class GenericPLC:
         Check if there are ongoing attacks and return 1 in that case. Moreover, it extracts active attackers to apply
         the injection of the attack.
         """
+        self.ongoing_attack_flag = 0
+
         if self.attackers:
             curr_attackers = [attacker for attacker in self.attackers
                               if attacker.event_start <= self.elapsed_time < attacker.event_end]

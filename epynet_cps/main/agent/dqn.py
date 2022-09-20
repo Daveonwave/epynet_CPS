@@ -212,7 +212,7 @@ class DeepQNetwork(AbstractAgent):
             self.fill_replay_buffer()
 
         self.results = {'train': [], 'eval': []}
-        n_epochs = self.model_configs['learning']['epochs']
+        n_epochs = self.model_configs['learning']['epochs']\
 
         for epoch in range(0, n_epochs):
             logger.print_epoch(epoch + 1)
