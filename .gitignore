@@ -284,6 +284,7 @@ epynet_cps/notebooks/to_load/*
 
 # shared files (dropbox)
 shared_files/*
+presentation/*
 
 # saved model and logs
 *.msh
