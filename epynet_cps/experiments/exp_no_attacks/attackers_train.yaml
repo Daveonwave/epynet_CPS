@@ -31,4 +31,4 @@ randomized_attackers:
         max_occurrences: 5
 
 # This has to be declared as in test configuration
-scheduled_attackers: null
+scheduled_attackers: None

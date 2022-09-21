@@ -1,7 +1,6 @@
 - name: attack1
   type: MITM
   trigger:
-    type: time
     start: 20000
     end: 63200
   tags:
