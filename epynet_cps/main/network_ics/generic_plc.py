@@ -25,6 +25,7 @@ class GenericPLC:
         self.elapsed_time = 0
         self.ongoing_attack_flag = 0
 
+        self.on_eval = False
         self.ground_readings = {}
         self.altered_readings = {}
 
@@ -35,16 +36,23 @@ class GenericPLC:
     def reset_collected_data(self):
         pass
 
+    def is_on_eval(self, flag: bool):
+        self.on_eval = flag
+
     def set_attackers(self, attackers=None):
         """
         Set the attackers as a list of attacker objects
         """
         self.attackers = attackers
+
+        #if self.on_eval:
         for object_type in self.owned_vars.keys():
             for var in self.owned_vars[object_type].keys():
                 self.altered_readings[var] = {}
                 for prop in self.owned_vars[object_type][var]:
                     self.altered_readings[var][prop] = []
+        #else:
+        #    self.altered_readings = {}
 
     def apply(self, var_list):
         pass
@@ -101,6 +109,10 @@ class SensorPLC(GenericPLC):
 
         """
         self.reset_collected_data()
+        #if self.on_eval:
+        #    self.reset_collected_data()
+        #else:
+        #    self.ground_readings = {}
 
         if var in self.owned_vars['nodes']:
             return getattr(self.wn.nodes[var], prop)
@@ -132,6 +144,8 @@ class SensorPLC(GenericPLC):
                 for prop in self.owned_vars[object_type][var]:
                     readings[var][prop] = getattr(self.wn, object_type)[var].results[prop][-1]
                     self.ground_readings[var][prop].append(readings[var][prop])
+                    #if self.ground_readings:
+                    #    self.ground_readings[var][prop].append(readings[var][prop])
 
         # Apply attacks
         if self.check_for_ongoing_attacks():

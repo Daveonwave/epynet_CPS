@@ -158,18 +158,22 @@ class WaterNetworkEnvironment(Environment):
 
                 # Build scheduled attackers
                 if attackers_config['scheduled_attackers']:
-                    for att in attackers_config['scheduled_attackers']:
-                        self.build_attacker(att)
+                    week = random.choice(list(attackers_config['scheduled_attackers'].keys()))
+                    print('week: ', week)
+                    # Check if the attacker file exists or if it is a week without attacks
+                    if attackers_config['scheduled_attackers'][week]:
+                        for att in attackers_config['scheduled_attackers'][week]:
+                            self.build_attacker(att)
 
                 # Build randomized attackers
+                """
                 if attackers_config['randomized_attackers']:
                     if not self.attackers_generator:
                         self.attackers_generator = AttackerGenerator()
                     self.attackers_generator.parse_configuration(attackers_config['randomized_attacks'])
-                    """
-                    CONTINUE FROM HERE FOR TRAIN RANDOMIZATION
-                    """
-
+                    
+                    CONTINUE FROM HERE FOR TRAIN RANDOMIZATIONs      
+                """
         # Create moving average values
         if 'demand_SMA' in self.state_vars.keys():
             self.demand_moving_average = junc_demands[col].rolling(window=6, min_periods=1).mean()
