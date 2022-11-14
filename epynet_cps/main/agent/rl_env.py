@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import random
 import yaml
+import os
 from pathlib import Path
 from mushroom_rl.core.environment import Environment, MDPInfo
 from mushroom_rl.utils.spaces import Discrete, Box
@@ -15,7 +16,7 @@ demand_pattern_folder = Path("../demand_patterns")
 
 class WaterNetworkEnvironment(Environment):
 
-    def __init__(self, env_config_file, attacks_train_file=None, attacks_test_file=None, logger=None):
+    def __init__(self, env_config_file, demand_patterns_file, attacks_train_file=None, attacks_test_file=None, logger=None):
         """
         :param env_config_file:
         """
@@ -23,8 +24,11 @@ class WaterNetworkEnvironment(Environment):
 
         with open(env_config_file, 'r') as fin:
             env_config = yaml.safe_load(fin)
+        with open(demand_patterns_file, 'r') as fin:
+            demand_patterns_config = yaml.safe_load(fin)
 
         self.town = env_config['town']
+        self.town_name = env_config['town_name']
         self.state_vars = env_config['state_vars']
         self.action_vars = env_config['action_vars']
 
@@ -34,10 +38,16 @@ class WaterNetworkEnvironment(Environment):
         self.update_every = env_config['update_every']
 
         # Demand patterns
-        self.patterns_train = env_config['pattern_files']['train']
+        # self.patterns_train = env_config['pattern_files']['train']
         # self.patterns_train_full_range_csv = env_config['pattern_files']['train_full_range']
         # self.patterns_train_low_csv = env_config['pattern_files']['train_low']
-        self.patterns_test_csv = env_config['pattern_files']['test']
+        # self.patterns_test_csv = env_config['pattern_files']['test']
+
+        # Demand patterns - NEW
+        # Dictionary of demand patterns with different conditions and chances
+        self.patterns_train = demand_patterns_config['train']
+        self.patterns_test_csv = demand_patterns_config['test']
+        self.training_conditions = []
 
         self.demand_moving_average = None
         self.test_seeds = env_config['test_seeds']
@@ -144,10 +154,18 @@ class WaterNetworkEnvironment(Environment):
         else:
             # Build demand patterns features
             if self.patterns_train:
+                pattern_types = [pattern['type'] for pattern in self.patterns_train]
+                pattern_weights = [pattern['chance'] for pattern in self.patterns_train]
+                chosen_pattern = random.choices(population=pattern_types, weights=pattern_weights, k=1)
+                pattern_train_csv = random.choice(
+                    self.patterns_train[pattern_types.index(chosen_pattern[0])]['pattern_files']
+                )
+
                 # Set pattern file choosing randomly between full range or low demand pattern
-                junc_demands = pd.read_csv(demand_pattern_folder / self.patterns_train)
+                junc_demands = pd.read_csv(demand_pattern_folder / self.town_name / pattern_train_csv)
                 col = random.choice(junc_demands.columns.values)
                 # print("col: ", col)
+                self.training_conditions.append({'type': chosen_pattern, 'file': pattern_train_csv, 'col': col})
                 self.wn.set_demand_pattern('junc_demand', junc_demands[col], self.wn.junctions)
 
             # TODO: randomize attacks -> think about that
@@ -419,7 +437,8 @@ class WaterNetworkEnvironment(Environment):
         if self.update_every:
             return dsr_ratio - overflow_penalty
         else:
-            reward = dsr_ratio * 0.36 - overflow_penalty * 0.53 - flow_penalty * 0.1 - pumps_updates_penalty * 0.01
+            #reward = dsr_ratio * 0.36 - overflow_penalty * 0.53 - flow_penalty * 0.1 - pumps_updates_penalty * 0.01
+            reward = dsr_ratio * 0.4 - overflow_penalty * 0.49 - flow_penalty * 0.1 - pumps_updates_penalty * 0.01
             #reward = dsr_ratio - overflow_penalty - flow_penalty
             return reward
 

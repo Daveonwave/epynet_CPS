@@ -4,11 +4,12 @@ agent_config: 'dqn_settings.yaml'
 meta-learning: false
 
 # With every type of simulation
-experiment_folder: 'exp_training_with_attacks'
+experiment_folder: 'exp-1_new_demand_patterns'
 experiments:
     - env: 'anytown_config.yaml'
-      #attacks_train: null
-      attacks_train: 'attackers_train.yaml'
-      #attacks_test: null
-      attacks_test: 'attackers_test.yaml'
-      output_folder: 'results/good_150_eps_train_attacks'
+      demand_patterns: 'demand_patterns.yaml'
+      attacks_train: null
+      #attacks_train: 'attackers_train.yaml'
+      attacks_test: null
+      #attacks_test: 'attackers_test.yaml'
+      output_folder: 'results/200_eps'

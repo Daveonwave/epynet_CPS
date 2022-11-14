@@ -41,11 +41,19 @@ action_vars:
     - 'P78'
     - 'P79'
 
-pattern_files:
+training_phase:
+    demand_patterns:
+
+
+testing_phase:
+    demand_patterns: 'anytown/demand_patterns_test_mixed.csv'
+
+demand_patterns:
     train: 'anytown/demand_patterns_0-01_0-55_train.csv'
     train_full_range: 'anytown/demand_patterns_train_full_range.csv'
     train_low: 'anytown/demand_patterns_train_low.csv'
-    test: 'anytown/demand_patterns_0-01_0-55_test.csv'
+    test: 'anytown/demand_patterns_test_mixed.csv'
+
 
 test_seeds:
     - 0

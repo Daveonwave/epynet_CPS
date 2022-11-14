@@ -49,16 +49,19 @@ class DeepQNetwork(AbstractAgent):
 
         self.scores = []
         self.results = None
+        self.intermediate_results = []
 
-    def build_env(self, env_file, attacks_train_file=None, attacks_test_file=None, output_file_path=None):
+    def build_env(self, env_file, demand_patterns_file, attacks_train_file=None, attacks_test_file=None, output_file_path=None):
         """
         Build the current experiment model passing the configurations of both environment and attacks.
         :param env_file:
+        :param demand_patterns_file:
         :param attacks_train_file:
         :param attacks_test_file:
         :param output_file_path:
         """
         self.env = WaterNetworkEnvironment(env_config_file=env_file,
+                                           demand_patterns_file=demand_patterns_file,
                                            attacks_train_file=attacks_train_file,
                                            attacks_test_file=attacks_test_file,
                                            logger=logger
@@ -212,7 +215,7 @@ class DeepQNetwork(AbstractAgent):
             self.fill_replay_buffer()
 
         self.results = {'train': [], 'eval': []}
-        n_epochs = self.model_configs['learning']['epochs']\
+        n_epochs = self.model_configs['learning']['epochs']
 
         for epoch in range(0, n_epochs):
             logger.print_epoch(epoch + 1)
@@ -221,6 +224,8 @@ class DeepQNetwork(AbstractAgent):
             # Evaluation at the end of the epoch
             self.env.curr_seed = 0
             self.evaluate(get_data=False, collect_qs=False)
+
+            self.intermediate_results.append({'dsr': self.env.dsr, 'updates': self.env.total_updates, 'epoch': epoch})
 
         for seed in self.env.test_seeds:
             self.env.curr_seed = seed
@@ -237,6 +242,9 @@ class DeepQNetwork(AbstractAgent):
                 for sensor in self.env.sensor_plcs:
                     sensor.save_ground_data(self.output_file_path, seed)
                     sensor.save_altered_data(self.output_file_path, seed)
+
+        self.results['intermediate_results'] = self.intermediate_results
+        self.results['training_patterns'] = [pattern['type'][0] for pattern in self.env.training_conditions]
 
         self.save_results(do_save=self.model_configs['results']['save_results'])
         self.save_model()

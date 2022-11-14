@@ -1,0 +1,749 @@
+# RANDOM ATTACK FORMAT
+# -------------------------------------------------------------------------------------------------
+# Attack properties:
+#   - enable: allows the attacker to be struck the current simulation
+#   - attacker_presence_chance: guarantees the presence of that attack in an episode depending on
+#     the provided percentage
+#   - duration: describes how much time the attack will last
+#   - max_occurrences: maximum amount of times that the attacker can strike in an episode
+# -------------------------------------------------------------------------------------------------
+
+randomized_attackers:
+    # Allows multiple typology to be overlapped (there is a hierarchy of application)
+    overlap_attacks: True
+
+    MITM:
+        enable: True
+        attacker_presence_chance: 0.5
+        duration: 28800                 # 8 hour
+        max_occurrences: 5
+
+    DOS:
+        enable: Tr
+        attacker_presence_chance: 0.5
+        duration: 28800                 # 8 hours
+        max_occurrences: 5
+
+    NetworkDelay:
+        enable: False
+        attacker_presence_chance: 0.5
+        duration: 28800                 # 8 hours
+        max_occurrences: 5
+
+# This has to be declared as in test configuration
+scheduled_attackers:
+    0: null
+    1:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 284128
+                start: 240928
+                type: time
+            type: MITM
+    2: null
+    3:
+        -   name: attack_0
+            tags: null
+            target: PLC3
+            trigger:
+                end: 91044
+                start: 33444
+                type: time
+            type: DOS
+        -   name: attack_1
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 180988
+                start: 94588
+                type: time
+            type: MITM
+        -   name: attack_2
+            tags: null
+            target: PLC2
+            trigger:
+                end: 273660
+                start: 230460
+                type: time
+            type: DOS
+    4: null
+    5: null
+    6: null
+    7: null
+    8:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 0.1
+            target: PLC2
+            trigger:
+                end: 115620
+                start: 86820
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags: null
+            target: PLC2
+            trigger:
+                end: 214080
+                start: 156480
+                type: time
+            type: DOS
+    9: null
+    10: null
+    11: null
+    12: null
+    13: null
+    14: null
+    15: null
+    16: null
+    17: null
+    18: null
+    19: null
+    20: null
+    21: null
+    22: null
+    23:
+        -   name: attack_0
+            tags: null
+            target: PLC3
+            trigger:
+                end: 74230
+                start: 16630
+                type: time
+            type: DOS
+        -   name: attack_1
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 180573
+                start: 151773
+                type: time
+            type: MITM
+        -   name: attack_2
+            tags: null
+            target: PLC2
+            trigger:
+                end: 291211
+                start: 233611
+                type: time
+            type: DOS
+        -   name: attack_3
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 0.1
+            target: PLC2
+            trigger:
+                end: 378406
+                start: 292006
+                type: time
+            type: MITM
+        -   name: attack_4
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 538549
+                start: 509749
+                type: time
+            type: MITM
+    24: null
+    25: null
+    26: null
+    27: null
+    28:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 64409
+                start: 35609
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags: null
+            target: PLC2
+            trigger:
+                end: 243944
+                start: 200744
+                type: time
+            type: DOS
+        -   name: attack_2
+            tags: null
+            target: PLC3
+            trigger:
+                end: 444302
+                start: 357902
+                type: time
+            type: DOS
+        -   name: attack_3
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 521037
+                start: 463437
+                type: time
+            type: MITM
+    29:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 112650
+                start: 26250
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 210082
+                start: 152482
+                type: time
+            type: MITM
+        -   name: attack_2
+            tags: null
+            target: PLC3
+            trigger:
+                end: 360459
+                start: 274059
+                type: time
+            type: DOS
+        -   name: attack_3
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 451969
+                start: 423169
+                type: time
+            type: MITM
+        -   name: attack_4
+            tags: null
+            target: PLC2
+            trigger:
+                end: 490716
+                start: 461916
+                type: time
+            type: DOS
+    30: null
+    31: null
+    32: null
+    33: null
+    34: null
+    35: null
+    36:
+        -   name: attack_0
+            tags: null
+            target: PLC3
+            trigger:
+                end: 66377
+                start: 23177
+                type: time
+            type: DOS
+        -   name: attack_1
+            tags: null
+            target: PLC2
+            trigger:
+                end: 187126
+                start: 129526
+                type: time
+            type: DOS
+        -   name: attack_2
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 430359
+                start: 372759
+                type: time
+            type: MITM
+        -   name: attack_3
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 541791
+                start: 455391
+                type: time
+            type: MITM
+    37: null
+    38: null
+    39:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 0.1
+            target: PLC2
+            trigger:
+                end: 80059
+                start: 51259
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags: null
+            target: PLC2
+            trigger:
+                end: 193343
+                start: 106943
+                type: time
+            type: DOS
+        -   name: attack_2
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 291143
+                start: 262343
+                type: time
+            type: MITM
+        -   name: attack_3
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 392895
+                start: 306495
+                type: time
+            type: MITM
+        -   name: attack_4
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 474002
+                start: 416402
+                type: time
+            type: MITM
+        -   name: attack_5
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 0.1
+            target: PLC2
+            trigger:
+                end: 581809
+                start: 538609
+                type: time
+            type: MITM
+    40: null
+    41: null
+    42: null
+    43: null
+    44: null
+    45: null
+    46: null
+    47:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 70733
+                start: 41933
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags: null
+            target: PLC3
+            trigger:
+                end: 182317
+                start: 124717
+                type: time
+            type: DOS
+    48: null
+    49:
+        -   name: attack_0
+            tags: null
+            target: PLC2
+            trigger:
+                end: 73971
+                start: 30771
+                type: time
+            type: DOS
+        -   name: attack_1
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 145935
+                start: 88335
+                type: time
+            type: MITM
+        -   name: attack_2
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 255503
+                start: 169103
+                type: time
+            type: MITM
+        -   name: attack_3
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 300892
+                start: 272092
+                type: time
+            type: MITM
+        -   name: attack_4
+            tags: null
+            target: PLC2
+            trigger:
+                end: 532332
+                start: 445932
+                type: time
+            type: DOS
+    50: null
+    51: null
+    52: null
+    53: null
+    54: null
+    55: null
+    56: null
+    57: null
+    58:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 145046
+                start: 116246
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 369097
+                start: 282697
+                type: time
+            type: MITM
+        -   name: attack_2
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 535921
+                start: 507121
+                type: time
+            type: MITM
+    59: null
+    60: null
+    61: null
+    62: null
+    63: null
+    64: null
+    65: null
+    66: null
+    67: null
+    68: null
+    69: null
+    70: null
+    71: null
+    72: null
+    73: null
+    74: null
+    75: null
+    76: null
+    77: null
+    78: null
+    79:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 58240
+                start: 29440
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags: null
+            target: PLC3
+            trigger:
+                end: 206881
+                start: 178081
+                type: time
+            type: DOS
+        -   name: attack_2
+            tags: null
+            target: PLC3
+            trigger:
+                end: 308774
+                start: 265574
+                type: time
+            type: DOS
+        -   name: attack_3
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 427642
+                start: 370042
+                type: time
+            type: MITM
+    80: null
+    81: null
+    82:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 0.1
+            target: PLC2
+            trigger:
+                end: 42175
+                start: 13375
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 114725
+                start: 71525
+                type: time
+            type: MITM
+        -   name: attack_2
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 178084
+                start: 120484
+                type: time
+            type: MITM
+        -   name: attack_3
+            tags: null
+            target: PLC2
+            trigger:
+                end: 378421
+                start: 320821
+                type: time
+            type: DOS
+        -   name: attack_4
+            tags: null
+            target: PLC3
+            trigger:
+                end: 446763
+                start: 389163
+                type: time
+            type: DOS
+        -   name: attack_5
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 521329
+                start: 492529
+                type: time
+            type: MITM
+    83: null
+    84: null
+    85: null
+    86: null
+    87: null
+    88: null
+    89: null
+    90: null
+    91: null
+    92:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 0.1
+            target: PLC2
+            trigger:
+                end: 164000
+                start: 135200
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 348972
+                start: 305772
+                type: time
+            type: MITM
+        -   name: attack_2
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 10
+            target: PLC3
+            trigger:
+                end: 390972
+                start: 362172
+                type: time
+            type: MITM
+    93: null
+    94: null
+    95: null
+    96: null
+    97: null
+    98: null
+    99: null
+    100: null
+    101: null
+    102: null
+    103:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T41
+                    value: 10
+            target: PLC2
+            trigger:
+                end: 540135
+                start: 496935
+                type: time
+            type: MITM
+    104: null
+    105: null
+    106: null
+    107: null
+    108: null
+    109: null
+    110: null
+    111: null
+    112: null
+    113: null
+    114: null
+    115: null
+    116: null
+    117: null
+    118: null
+    119: null
+    120: null
+    121: null
+    122: null
+    123: null
+    124: null
+    125: null
+    126: null
+    127:
+        -   name: attack_0
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 208083
+                start: 150483
+                type: time
+            type: MITM
+        -   name: attack_1
+            tags:
+                -   property: pressure
+                    tag: T42
+                    value: 0.1
+            target: PLC3
+            trigger:
+                end: 388886
+                start: 345686
+                type: time
+            type: MITM
+    128: null
+    129: null
+    130: null
+    131: null
+    132: null
+    133: null
+    134: null
+    135: null
+    136: null
+    137: null
+    138: null
+    139: null
+    140: null
+    141: null
+    142: null
+    143: null
+    144: null
+    145: null
+    146: null
+    147: null
+    148: null
+    149: null
+    150: null
+    151: null
+    152: null
+    153: null
+    154: null
+    155: null
