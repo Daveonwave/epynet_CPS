@@ -15,8 +15,8 @@ optimizer:
 
 # Training schedule
 learning:
-    epochs: 40
-    train_episodes: 5
+    epochs: 100
+    train_episodes: 10
     train_frequency: 4
 
 results:
@@ -28,4 +28,4 @@ results:
 
 model:
     save_model: True
-    save_as: '200_eps'
+    save_as: '1000_eps'
