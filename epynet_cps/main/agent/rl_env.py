@@ -154,14 +154,15 @@ class WaterNetworkEnvironment(Environment):
         else:
             # Build demand patterns features
             if self.patterns_train:
+                # Here we choose the different type of pattern demand
                 pattern_types = [pattern['type'] for pattern in self.patterns_train]
                 pattern_weights = [pattern['chance'] for pattern in self.patterns_train]
                 chosen_pattern = random.choices(population=pattern_types, weights=pattern_weights, k=1)
+
+                # Here we choose a random week from a random interval of the picked pattern type
                 pattern_train_csv = random.choice(
                     self.patterns_train[pattern_types.index(chosen_pattern[0])]['pattern_files']
                 )
-
-                # Set pattern file choosing randomly between full range or low demand pattern
                 junc_demands = pd.read_csv(demand_pattern_folder / self.town_name / pattern_train_csv)
                 col = random.choice(junc_demands.columns.values)
                 # print("col: ", col)
@@ -425,8 +426,8 @@ class WaterNetworkEnvironment(Environment):
             # Filter keys of readings belonging to junction properties
             junctions = dict((key, self.readings[sensor][key]) for key in self.readings[sensor].keys()
                              if key.startswith('J'))
-            supplies = [junctions[var]['demand'] for var in junctions.keys()]
-            base_demands = [junctions[var]['basedemand'] for var in junctions.keys()]
+            supplies.extend([junctions[var]['demand'] for var in junctions.keys()])
+            base_demands.extend([junctions[var]['basedemand'] for var in junctions.keys()])
 
         dsr_ratio = objFunction.step_supply_demand_ratio(supplies=supplies, base_demands=base_demands)
 

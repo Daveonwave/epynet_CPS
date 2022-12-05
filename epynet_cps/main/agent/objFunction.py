@@ -9,7 +9,6 @@ def supply_demand_ratio(supplies, base_demands):
     :return: average over all the ratios (actual_demand / base_demand)
     """
     ratios = []
-
     for junc in range(len(supplies[0])):
         junc_supply = sum([timestep[junc] for timestep in supplies])
         junc_demand = sum([timestep[junc] for timestep in base_demands])
