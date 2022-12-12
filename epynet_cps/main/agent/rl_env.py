@@ -296,6 +296,12 @@ class WaterNetworkEnvironment(Environment):
                     state.append(0)
                 elif var == 'day':
                     state.append(1)
+                # Day and week expressed in trigonometric format
+                elif var == 'day_cos' or var == 'week_cos':
+                    state.append(1)
+                elif var == 'day_sin' or var == 'week_sin':
+                    state.append(0)
+
                 elif var == 'demand_SMA':
                     state.append(self.demand_moving_average.iloc[0])
                 elif var == 'under_attack':
@@ -318,11 +324,23 @@ class WaterNetworkEnvironment(Environment):
                     state.append(self.curr_time % seconds_per_day)
                 elif var == 'day':
                     state.append(((self.curr_time // seconds_per_day) % days_per_week) + 1)
+
+                # Day and week expressed in trigonometric format
+                elif var == 'day_cos':
+                    state.append(np.cos((self.curr_time % seconds_per_day) * 2*np.pi / seconds_per_day))
+                elif var == 'day_sin':
+                    state.append(np.sin((self.curr_time % seconds_per_day) * 2*np.pi / seconds_per_day))
+                # Day and week expressed in trigonometric format
+                elif var == 'week_cos':
+                    state.append(np.cos(self.curr_time * 2 * np.pi / self.duration))
+                elif var == 'week_sin':
+                    state.append(np.sin(self.curr_time * 2 * np.pi / self.duration))
+
                 elif var == 'demand_SMA':
                     state.append(self.demand_moving_average.iloc[current_hour])
                 elif var == 'under_attack':
                     attack_flag = 0
-                    # Checks if one of the sensor plc is compromised by a ongoing attack
+                    # Checks if one of the sensor plc is compromised by an ongoing attack
                     for sensor in self.sensor_plcs:
                         if readings[sensor.name]['under_attack']:
                             attack_flag = 1
@@ -386,8 +404,9 @@ class WaterNetworkEnvironment(Environment):
 
     def check_pumps_updates(self, step_updates):
         """
-        Check whether pumps status is update too frequently and compute an incremental penalty to discourage this
-        behaviour.
+        Check whether pumps status is updated too frequently.
+        It looks at the previous simulation step and collects the state of pumps: if there was an update, the method
+        compute an incremental penalty in order to avoid too frequent and adjacent updates.
         """
         pumps_update_penalty = 0
 
@@ -438,8 +457,12 @@ class WaterNetworkEnvironment(Environment):
         if self.update_every:
             return dsr_ratio - overflow_penalty
         else:
-            #reward = dsr_ratio * 0.36 - overflow_penalty * 0.53 - flow_penalty * 0.1 - pumps_updates_penalty * 0.01
-            reward = dsr_ratio * 0.4 - overflow_penalty * 0.49 - flow_penalty * 0.1 - pumps_updates_penalty * 0.01
+            # Weights coefficients
+            c1 = 0.5   # DSR
+            c2 = 0.45   # Overflow
+            c3 = 0   # Flow
+            c4 = 0.05   # Pump updates
+            reward = dsr_ratio * c1 - overflow_penalty * c2 - flow_penalty * c3 - pumps_updates_penalty * c4
             #reward = dsr_ratio - overflow_penalty - flow_penalty
             return reward
 

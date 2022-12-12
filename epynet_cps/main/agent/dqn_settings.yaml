@@ -2,9 +2,10 @@ agent:
     load: False
     load_as: 'saved_models/good_90_eps.msh'
     batch_size: 64
-    target_update_frequency: 50
+    #target_update_frequency: 50
+    target_update_frequency: 100
     #initial_replay_memory: 50
-    initial_replay_memory: 5000
+    initial_replay_memory: 10000
     max_replay_size: 100000
 
 nn:
@@ -22,10 +23,10 @@ learning:
 results:
     save_results: True
     dataset: True
-    q_values: False
+    q_values: True
     links_report: True
     nodes_report: False
 
 model:
     save_model: True
-    save_as: '1000_eps'
+    save_as: '1000_eps-13dec2022'

@@ -12,4 +12,4 @@ experiments:
       #attacks_train: 'attackers_train.yaml'
       attacks_test: null
       #attacks_test: 'attackers_test.yaml'
-      output_folder: 'results/1000_eps'
+      output_folder: 'results/1000_eps-13dec2022'

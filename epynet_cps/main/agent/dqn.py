@@ -185,7 +185,6 @@ class DeepQNetwork(AbstractAgent):
     def save_results(self, do_save=False):
         """
         Save results: dataset and q_values.
-        TODO: create folder
         """
         if do_save:
             # Check if "results" directory exists
@@ -198,7 +197,7 @@ class DeepQNetwork(AbstractAgent):
 
     def save_model(self):
         """
-        # TODO: change the implementation of this method
+        Save the model created
         """
         if self.model_configs['model']['save_model']:
             file_name = self.model_configs['model']['save_as'] + ".msh"
@@ -222,17 +221,23 @@ class DeepQNetwork(AbstractAgent):
             self.learn()
 
             # Evaluation at the end of the epoch
-            self.env.curr_seed = 0
-            self.evaluate(get_data=False, collect_qs=False)
-
-            self.intermediate_results.append({'dsr': self.env.dsr, 'updates': self.env.total_updates, 'epoch': epoch})
+            for seed in self.env.test_seeds:
+                self.env.curr_seed = seed
+                self.evaluate(get_data=False, collect_qs=False)
+                self.intermediate_results.append({'seed': seed,
+                                                  'dsr': self.env.dsr,
+                                                  'updates': self.env.total_updates,
+                                                  'epoch': epoch})
 
         for seed in self.env.test_seeds:
             self.env.curr_seed = seed
             dataset, qs = self.evaluate(get_data=self.model_configs['results']['dataset'],
                                         collect_qs=self.model_configs['results']['q_values'])
             # TODO: add attacks to results
-            res = {'dsr': self.env.dsr, 'updates': self.env.total_updates, 'seed': seed, 'dataset': dataset,
+            res = {'dsr': self.env.dsr,
+                   'updates': self.env.total_updates,
+                   'seed': seed,
+                   'dataset': dataset,
                    'q_values': qs}
 
             self.results['eval'].append(res)

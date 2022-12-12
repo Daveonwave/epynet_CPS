@@ -23,8 +23,8 @@ class NN10Layers(nn.Module):
 
         self.input = nn.Linear(n_input, hidden_size)
         self.hidden1 = nn.Linear(hidden_size, hidden_size)
-        # self.hidden2 = nn.Linear(hidden_size, hidden_size)
-        # self.hidden3 = nn.Linear(hidden_size, hidden_size)
+        self.hidden2 = nn.Linear(hidden_size, hidden_size)
+        self.hidden3 = nn.Linear(hidden_size, hidden_size)
         # self.hidden4 = nn.Linear(hidden_size, hidden_size)
         # self.hidden5 = nn.Linear(hidden_size, hidden_size)
         # self.hidden6 = nn.Linear(hidden_size, hidden_size)
@@ -41,8 +41,8 @@ class NN10Layers(nn.Module):
         """
         x = F.relu(self.input(input))
         x = F.relu(self.hidden1(x))
-        # x = F.relu(self.hidden2(x))
-        # x = F.relu(self.hidden3(x))
+        x = F.relu(self.hidden2(x))
+        x = F.relu(self.hidden3(x))
         # x = F.relu(self.hidden4(x))
         # x = F.relu(self.hidden5(x))
         # x = F.relu(self.hidden6(x))
