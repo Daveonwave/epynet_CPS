@@ -220,14 +220,15 @@ class DeepQNetwork(AbstractAgent):
             logger.print_epoch(epoch + 1)
             self.learn()
 
-            # Evaluation at the end of the epoch
-            for seed in self.env.test_seeds:
-                self.env.curr_seed = seed
-                self.evaluate(get_data=False, collect_qs=False)
-                self.intermediate_results.append({'seed': seed,
-                                                  'dsr': self.env.dsr,
-                                                  'updates': self.env.total_updates,
-                                                  'epoch': epoch})
+            # Evaluation at the end of the epoch (skip for last epoch)
+            if epoch < n_epochs - 1:
+                for seed in self.env.test_seeds:
+                    self.env.curr_seed = seed
+                    self.evaluate(get_data=False, collect_qs=False)
+                    self.intermediate_results.append({'seed': seed,
+                                                      'dsr': self.env.dsr,
+                                                      'updates': self.env.total_updates,
+                                                      'epoch': epoch})
 
         for seed in self.env.test_seeds:
             self.env.curr_seed = seed
@@ -238,7 +239,9 @@ class DeepQNetwork(AbstractAgent):
                    'updates': self.env.total_updates,
                    'seed': seed,
                    'dataset': dataset,
-                   'q_values': qs}
+                   'q_values': qs,
+                   'overflow': self.env.total_overflow,
+                   'flow': self.env.total_flow}
 
             self.results['eval'].append(res)
 

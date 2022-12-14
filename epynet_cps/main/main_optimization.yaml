@@ -1,0 +1,28 @@
+# In case of experiment with agent
+agent_class: DeepQNetwork
+agent_config: 'dqn_settings.yaml'
+meta-learning: false
+
+optimization_target: 'reward_function'
+targets:
+    w_dsr:
+        min: 0.4
+        max: 1
+    w_overflow:
+        min: 0.1
+        max: 0.8
+    w_flow:
+        min: 0
+        max: 0.5
+    w_pump_updates:
+        min: 0
+        max: 0.5
+
+
+# With every type of simulation
+experiment_folder: 'exp-reward_tuning'
+experiment:
+    env: 'anytown_config.yaml'
+    demand_patterns: 'demand_patterns.yaml'
+    attacks_train: null
+    attacks_test: null

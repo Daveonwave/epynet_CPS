@@ -9,14 +9,14 @@ agent:
     max_replay_size: 100000
 
 nn:
-    hidden_size: 5
+    hidden_size: 4
 
 optimizer:
     lr: .00025
 
 # Training schedule
 learning:
-    epochs: 100
+    epochs: 50
     train_episodes: 10
     train_frequency: 4
 
@@ -28,5 +28,5 @@ results:
     nodes_report: False
 
 model:
-    save_model: True
-    save_as: '1000_eps-13dec2022'
+    save_model: False
+    save_as: '80_eps_5'

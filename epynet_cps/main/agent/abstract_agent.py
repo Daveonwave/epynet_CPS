@@ -8,7 +8,12 @@ class AbstractAgent(ABC):
         pass
 
     @abstractmethod
-    def build_env(self, env_file, attacks_file=None):
+    def build_env(self,
+                  env_file,
+                  demand_patterns_file,
+                  attacks_train_file=None,
+                  attacks_test_file=None,
+                  output_file_path=None):
         pass
 
     @abstractmethod

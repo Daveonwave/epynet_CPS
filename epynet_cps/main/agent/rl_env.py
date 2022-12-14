@@ -47,6 +47,7 @@ class WaterNetworkEnvironment(Environment):
         # Dictionary of demand patterns with different conditions and chances
         self.patterns_train = demand_patterns_config['train']
         self.patterns_test_csv = demand_patterns_config['test']
+        self.random_seed = demand_patterns_config['seed']
         self.training_conditions = []
 
         self.demand_moving_average = None
@@ -61,11 +62,19 @@ class WaterNetworkEnvironment(Environment):
         self.timestep = None
         self.readings = None
 
+        # Reward weights
+        self.w_dsr = 0.
+        self.w_overflow = 0.
+        self.w_flow = 0.
+        self.w_pump_updates = 0.
+
         self.done = False
         self.total_updates = 0
         self.total_supplies = []
         self.total_base_demands = []
         self.dsr = 0
+        self.total_overflow = []
+        self.total_flow = []
 
         # Initialize ICS component
         self.plcs_config = env_config['plcs']
@@ -124,9 +133,14 @@ class WaterNetworkEnvironment(Environment):
         self.wn.solved = False
         self.done = False
 
+        if self.random_seed:
+            np.random.seed(self.random_seed)
+
         self.total_supplies = []
         self.total_base_demands = []
         self.total_updates = 0
+        self.total_overflow = []
+        self.total_flow = []
 
         self.attackers = []
         junc_demands = []
@@ -437,6 +451,9 @@ class WaterNetworkEnvironment(Environment):
         flow_penalty = self.check_pumps_flow()
         pumps_updates_penalty = self.check_pumps_updates(step_pump_updates)
 
+        self.total_overflow.append(overflow_penalty)
+        self.total_flow.append(flow_penalty)
+
         # DSR computation
         supplies = []
         base_demands = []
@@ -457,13 +474,11 @@ class WaterNetworkEnvironment(Environment):
         if self.update_every:
             return dsr_ratio - overflow_penalty
         else:
-            # Weights coefficients
-            c1 = 0.5   # DSR
-            c2 = 0.45   # Overflow
-            c3 = 0   # Flow
-            c4 = 0.05   # Pump updates
-            reward = dsr_ratio * c1 - overflow_penalty * c2 - flow_penalty * c3 - pumps_updates_penalty * c4
-            #reward = dsr_ratio - overflow_penalty - flow_penalty
+            # Weighted multi-objectives reward
+            reward = dsr_ratio * self.w_dsr - \
+                     overflow_penalty * self.w_overflow - \
+                     flow_penalty * self.w_flow - \
+                     pumps_updates_penalty * self.w_pump_updates
             return reward
 
     # TODO: fix object function with readings
@@ -478,3 +493,5 @@ class WaterNetworkEnvironment(Environment):
     def get_state(self):
         return self._state
 
+    def set_reward_weights(self, weights):
+        self.w_dsr, self.w_overflow, self.w_flow, self.w_pump_updates = weights
